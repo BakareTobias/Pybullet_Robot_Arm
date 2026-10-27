@@ -1,5 +1,5 @@
-# GELİŞTİRİLMİŞ ROBOT KONTROL SİMÜLASYONU
-# DERS 3+: Gelişmiş Eklem Durumu Okuma ve Kontrol
+# ADVANCED ROBOT CONTROL SIMULATION
+# LESSON 3+: Advanced Joint State Reading and Control
 
 import pybullet as p
 import pybullet_data
@@ -12,32 +12,32 @@ import threading
 
 class RobotSimulator:
     def __init__(self, gui=True):
-        """Robot simülatörünü başlatır ve robotu yükler"""
+        """Starts the robot simulator and loads the robot."""
         self.gui = gui
         self.simulation_running = False
-        self.joint_states_history = {i: deque(maxlen=100) for i in range(7)}  # Son 100 adımı sakla
+        self.joint_states_history = {i: deque(maxlen=100) for i in range(7)}  # Store the last 100 steps
         self.time_history = deque(maxlen=100)
 
-        # Simülasyonu başlat
+        # Start the simulation
         if self.gui:
             self.client = p.connect(p.GUI)
-            p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)  # GUI'yi basitleştir
+            p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)  # Simplify the GUI
         else:
             self.client = p.connect(p.DIRECT)
 
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         p.setGravity(0, 0, -9.81)
-        p.setRealTimeSimulation(0)  # Adım adım simülasyon
+        p.setRealTimeSimulation(0)  # Step-by-step simulation
         p.setTimeStep(1./240.)
 
-        # Zemin ekle
+        # Add the ground
         p.loadURDF("plane.urdf")
 
-        # Robotu yükle
+        # Load the robot
         self.robot = p.loadURDF("kuka_iiwa/model.urdf", [0, 0, 0], useFixedBase=True)
         self.num_joints = p.getNumJoints(self.robot)
 
-        # Eklem bilgilerini al
+        # Get joint information
         self.joint_info = []
         for i in range(self.num_joints):
             info = p.getJointInfo(self.robot, i)
@@ -50,51 +50,51 @@ class RobotSimulator:
                 'max_velocity': info[11]
             })
 
-        # Eklem kontrol parametreleri
+        # Joint control parameters
         self.joint_gains = [0.1] * self.num_joints
         self.joint_damping = [0.5] * self.num_joints
 
-        print("✓ Simülasyon başlatıldı")
-        print(f"✓ Robot yüklendi: {self.num_joints} eklem tespit edildi")
+        print("✓ Simulation started")
+        print(f"✓ Robot loaded: {self.num_joints} joints detected")
 
-        # Başlangıç pozisyonunu sıfırla
+        # Reset the starting position
         self.reset_robot()
 
     def reset_robot(self):
-        """Robotu başlangıç pozisyonuna sıfırlar"""
+        """Resets the robot to its starting position."""
         for i in range(self.num_joints):
             p.resetJointState(self.robot, i, 0.0)
-        print("✓ Robot başlangıç pozisyonuna sıfırlandı")
+        print("✓ Robot reset to its starting position")
 
     def get_joint_state(self, joint_index):
         """
-        Bir eklemin gerçek durumunu okur
+        Reads the current state of a joint.
 
-        Parametreler:
-            joint_index: Eklem numarası
+        Parameters:
+            joint_index: Joint index
 
-        Döndürür:
-            position: Eklemin mevcut açısı (radyan)
-            velocity: Eklemin dönüş hızı (radyan/saniye)
-            reaction_forces: Reaksiyon kuvvetleri
-            applied_torque: Uygulanan tork
+        Returns:
+            position: Current joint angle (radians)
+            velocity: Joint angular velocity (radians/second)
+            reaction_forces: Reaction forces
+            applied_torque: Applied torque
         """
         try:
             state = p.getJointState(self.robot, joint_index)
             position, velocity, reaction_forces, applied_torque = state
             return position, velocity, reaction_forces, applied_torque
         except Exception as e:
-            print(f"Hata: Eklem {joint_index} durumu okunamadı: {e}")
+            print(f"Error: Could not read the state of joint {joint_index}: {e}")
             return None, None, None, None
 
     def set_joint_position(self, joint_index, target_position, max_force=None):
         """
-        Bir eklemi hedef pozisyona hareket ettirir
+        Moves a joint to the target position.
 
-        Parametreler:
-            joint_index: Eklem numarası
-            target_position: Hedef açı (radyan)
-            max_force: Maksimum uygulanan kuvvet (None ise otomatik)
+        Parameters:
+            joint_index: Joint index
+            target_position: Target angle (radians)
+            max_force: Maximum applied force (automatic if None)
         """
         if max_force is None:
             max_force = self.joint_info[joint_index]['max_force']
@@ -111,24 +111,24 @@ class RobotSimulator:
 
     def set_joint_positions(self, target_positions):
         """
-        Birden fazla eklemi aynı anda hedef pozisyonlara hareket ettirir
+        Moves multiple joints to their target positions simultaneously.
 
-        Parametreler:
-            target_positions: Hedef açılar listesi (radyan)
+        Parameters:
+            target_positions: List of target angles (radians)
         """
         for i, target in enumerate(target_positions):
             if i < self.num_joints:
                 self.set_joint_position(i, target)
 
     def simulate(self, steps=1):
-        """Simülasyonu belirtilen adım kadar ilerletir"""
+        """Advances the simulation by the specified number of steps."""
         for _ in range(steps):
             p.stepSimulation()
             if self.gui:
                 time.sleep(1./240.)
 
     def update_joint_history(self):
-        """Eklem durumları geçmişini günceller"""
+        """Updates the joint state history."""
         current_time = time.time()
         self.time_history.append(current_time)
 
@@ -138,28 +138,28 @@ class RobotSimulator:
 
     def print_joint_states(self, joint_indices=None):
         """
-        Eklem durumlarını ekrana yazdırır
+        Prints joint states to the console.
 
-        Parametreler:
-            joint_indices: Yazdırılacak eklem numaraları (None ise tüm eklemler)
+        Parameters:
+            joint_indices: Joint indices to print (all joints if None)
         """
         if joint_indices is None:
             joint_indices = range(self.num_joints)
 
         print("\n" + "="*50)
-        print("EKLEM DURUMLARI")
+        print("JOINT STATES")
         print("="*50)
 
         for i in joint_indices:
             if i < self.num_joints:
                 pos, vel, _, _ = self.get_joint_state(i)
                 if pos is not None:
-                    print(f"Eklem {i} ({self.joint_info[i]['name']}):")
-                    print(f"  Açı: {pos:.3f} radyan = {math.degrees(pos):.1f} derece")
-                    print(f"  Hız: {vel:.3f} rad/s")
+                    print(f"Joint {i} ({self.joint_info[i]['name']}):")
+                    print(f"  Angle: {pos:.3f} radians = {math.degrees(pos):.1f} degrees")
+                    print(f"  Velocity: {vel:.3f} rad/s")
 
     def get_end_effector_position(self):
-        """Robotun son efektörünün pozisyonunu döndürür"""
+        """Returns the position of the robot's end effector."""
         end_effector_link = self.num_joints - 1
         state = p.getLinkState(self.robot, end_effector_link)
         position, orientation = state[0], state[1]
@@ -167,11 +167,11 @@ class RobotSimulator:
 
     def plot_joint_positions(self, joint_indices=None, show_plot=True):
         """
-        Eklem pozisyonlarını grafiğe döker
+        Plots joint positions.
 
-        Parametreler:
-            joint_indices: Çizdirilecek eklem numaraları (None ise tüm eklemler)
-            show_plot: Grafiği hemen göster (True) veya figürü döndür (False)
+        Parameters:
+            joint_indices: Joint indices to plot (all joints if None)
+            show_plot: Show the plot immediately (True) or return the figure (False)
         """
         if joint_indices is None:
             joint_indices = range(self.num_joints)
@@ -182,11 +182,11 @@ class RobotSimulator:
             if i < self.num_joints and len(self.joint_states_history[i]) > 0:
                 positions = [state[0] for state in self.joint_states_history[i]]
                 times = list(range(len(positions)))
-                plt.plot(times, positions, label=f"Eklem {i} ({self.joint_info[i]['name']})")
+                plt.plot(times, positions, label=f"Joint {i} ({self.joint_info[i]['name']})")
 
-        plt.xlabel("Zaman (adım)")
-        plt.ylabel("Pozisyon (radyan)")
-        plt.title("Eklem Pozisyonları")
+        plt.xlabel("Time (step)")
+        plt.ylabel("Position (radians)")
+        plt.title("Joint Positions")
         plt.legend()
         plt.grid(True)
 
@@ -197,63 +197,63 @@ class RobotSimulator:
             return plt.gcf()
 
     def run_test_1(self):
-        """TEST 1: Başlangıç pozisyonunu oku"""
+        """TEST 1: Read the starting position."""
         print("\n" + "="*50)
-        print("TEST 1: Başlangıç Pozisyonu")
+        print("TEST 1: Starting Position")
         print("="*50)
 
         self.print_joint_states(range(3))
 
-        input("\nDevam etmek için ENTER'a basın...")
+        input("\nPress ENTER to continue...")
 
     def run_test_2(self):
-        """TEST 2: Hedef vs Gerçek Karşılaştırma"""
+        """TEST 2: Compare target and actual positions."""
         print("\n" + "="*50)
-        print("TEST 2: Hedef vs Gerçek Açı")
+        print("TEST 2: Target vs. Actual Angle")
         print("="*50)
 
-        target_angle = 1.0  # ~57 derece
-        print(f"\nHedef: Eklem 0'ı {target_angle:.3f} radyana götür ({math.degrees(target_angle):.1f}°)")
+        target_angle = 1.0  # ~57 degrees
+        print(f"\nTarget: Move joint 0 to {target_angle:.3f} radians ({math.degrees(target_angle):.1f}°)")
         self.set_joint_position(0, target_angle)
 
-        # Hareket sırasında her 100 adımda durumu göster
-        print("\nHareket ediyor...")
+        # Show the state every 100 steps while moving
+        print("\nMoving...")
         for step in range(500):
             self.simulate(1)
             self.update_joint_history()
 
-            # Her 100 adımda bir rapor ver
+            # Report every 100 steps
             if step % 100 == 0:
                 pos, vel, _, _ = self.get_joint_state(0)
-                print(f"  Adım {step:3d}: Açı={math.degrees(pos):6.2f}°, Hız={vel:6.3f} rad/s")
+                print(f"  Step {step:3d}: Angle={math.degrees(pos):6.2f}°, Velocity={vel:6.3f} rad/s")
 
-        # Final durumu
+        # Final state
         pos_final, vel_final, _, _ = self.get_joint_state(0)
-        print(f"\n✓ Hareket tamamlandı!")
-        print(f"  Hedef açı : {math.degrees(target_angle):.2f}°")
-        print(f"  Gerçek açı: {math.degrees(pos_final):.2f}°")
-        print(f"  Fark      : {math.degrees(pos_final - target_angle):.2f}°")
+        print(f"\n✓ Movement complete!")
+        print(f"  Target angle : {math.degrees(target_angle):.2f}°")
+        print(f"  Actual angle: {math.degrees(pos_final):.2f}°")
+        print(f"  Difference      : {math.degrees(pos_final - target_angle):.2f}°")
 
-        input("\nDevam etmek için ENTER'a basın...")
+        input("\nPress ENTER to continue...")
 
     def run_test_3(self):
-        """TEST 3: İki Eklemin Koordineli Hareketi"""
+        """TEST 3: Coordinated movement of two joints."""
         print("\n" + "="*50)
-        print("TEST 3: İki Eklem Koordineli Hareket")
+        print("TEST 3: Coordinated Movement of Two Joints")
         print("="*50)
 
-        # Hedefler
-        target_0 = 0.8   # ~46 derece
-        target_1 = -0.6  # ~-34 derece
+        # Targets
+        target_0 = 0.8   # ~46 degrees
+        target_1 = -0.6  # ~-34 degrees
 
-        print(f"\nHedefler:")
-        print(f"  Eklem 0: {math.degrees(target_0):.1f}°")
-        print(f"  Eklem 1: {math.degrees(target_1):.1f}°")
+        print(f"\nTargets:")
+        print(f"  Joint 0: {math.degrees(target_0):.1f}°")
+        print(f"  Joint 1: {math.degrees(target_1):.1f}°")
 
         self.set_joint_position(0, target_0)
         self.set_joint_position(1, target_1)
 
-        print("\nHareket ediyor...")
+        print("\nMoving...")
         for step in range(500):
             self.simulate(1)
             self.update_joint_history()
@@ -261,62 +261,62 @@ class RobotSimulator:
             if step % 100 == 0:
                 pos_0, vel_0, _, _ = self.get_joint_state(0)
                 pos_1, vel_1, _, _ = self.get_joint_state(1)
-                print(f"  Adım {step:3d}:")
-                print(f"    Eklem 0: {math.degrees(pos_0):6.2f}°")
-                print(f"    Eklem 1: {math.degrees(pos_1):6.2f}°")
+                print(f"  Step {step:3d}:")
+                print(f"    Joint 0: {math.degrees(pos_0):6.2f}°")
+                print(f"    Joint 1: {math.degrees(pos_1):6.2f}°")
 
-        print("\n✓ Koordineli hareket tamamlandı!")
+        print("\n✓ Coordinated movement complete!")
 
-        input("\nDevam etmek için ENTER'a basın...")
+        input("\nPress ENTER to continue...")
 
     def run_test_4(self):
-        """TEST 4: Canlı İzleme (Gerçek Zamanlı)"""
+        """TEST 4: Live monitoring (real time)."""
         print("\n" + "="*50)
-        print("TEST 4: Canlı İzleme - Robot Sallanırken")
+        print("TEST 4: Live Monitoring - Robot Oscillation")
         print("="*50)
-        print("10 saniye boyunca robot sallanacak")
-        print("Eklem durumları gerçek zamanlı gösterilecek\n")
+        print("The robot will oscillate for 10 seconds")
+        print("Joint states will be displayed in real time\n")
 
         start_time = time.time()
         t = 0
 
-        while time.time() - start_time < 10:  # 10 saniye
-            # Sinüzoidal hareket
+        while time.time() - start_time < 10:  # 10 seconds
+            # Sinusoidal motion
             target_0 = 0.6 * math.sin(t)
             target_1 = 0.4 * math.cos(t * 1.3)
 
             self.set_joint_position(0, target_0)
             self.set_joint_position(1, target_1)
 
-            # Gerçek durumu oku
+            # Read the actual state
             pos_0, vel_0, _, _ = self.get_joint_state(0)
             pos_1, vel_1, _, _ = self.get_joint_state(1)
 
-            # Ekrana yazdır (aynı satırı güncelle)
-            print(f"\rEklem 0: {math.degrees(pos_0):6.1f}° | "
-                  f"Eklem 1: {math.degrees(pos_1):6.1f}° | "
-                  f"Süre: {time.time()-start_time:.1f}s", end="")
+            # Print to the console (update the same line)
+            print(f"\rJoint 0: {math.degrees(pos_0):6.1f}° | "
+                  f"Joint 1: {math.degrees(pos_1):6.1f}° | "
+                  f"Time: {time.time()-start_time:.1f}s", end="")
 
             self.simulate(1)
             self.update_joint_history()
             t += 0.02
 
-        print("\n\n✓ Canlı izleme tamamlandı!")
+        print("\n\n✓ Live monitoring complete!")
 
-        input("\nDevam etmek için ENTER'a basın...")
+        input("\nPress ENTER to continue...")
 
     def run_test_5(self):
-        """TEST 5: Son Efektör Takibi"""
+        """TEST 5: End-effector tracking."""
         print("\n" + "="*50)
-        print("TEST 5: Son Efektör Takibi")
+        print("TEST 5: End-Effector Tracking")
         print("="*50)
-        print("Robotun son efektör pozisyonu hareket sırasında takip edilecek\n")
+        print("The robot's end-effector position will be tracked during movement\n")
 
-        # Başlangıç pozisyonunu kaydet
+        # Record the starting position
         start_pos, _ = self.get_end_effector_position()
-        print(f"Başlangıç pozisyonu: [{start_pos[0]:.3f}, {start_pos[1]:.3f}, {start_pos[2]:.3f}]")
+        print(f"Starting position: [{start_pos[0]:.3f}, {start_pos[1]:.3f}, {start_pos[2]:.3f}]")
 
-        # Hedef pozisyonlar
+        # Target positions
         targets = [
             [0.5, 0.0, 0.5],
             [0.5, 0.5, 0.5],
@@ -325,10 +325,10 @@ class RobotSimulator:
         ]
 
         for i, target in enumerate(targets):
-            print(f"\nHedef {i+1}: [{target[0]:.3f}, {target[1]:.3f}, {target[2]:.3f}]")
+            print(f"\nTarget {i+1}: [{target[0]:.3f}, {target[1]:.3f}, {target[2]:.3f}]")
 
-            # Basit bir ters kinematik yaklaşımı (sadece demo amaçlı)
-            # Gerçek uygulamada daha gelişmiş bir algoritma gerekir
+            # A simple inverse-kinematics approach (for demonstration only)
+            # A more advanced algorithm is needed in real applications
             if target[0] != 0:
                 self.set_joint_position(0, math.atan2(target[1], target[0]))
             else:
@@ -339,32 +339,32 @@ class RobotSimulator:
             else:
                 self.set_joint_position(1, math.pi/2)
 
-            # Hareket et ve bekle
+            # Move and wait
             for step in range(200):
                 self.simulate(1)
                 self.update_joint_history()
 
-            # Son pozisyonu oku
+            # Read the final position
             end_pos, _ = self.get_end_effector_position()
-            print(f"Son pozisyon: [{end_pos[0]:.3f}, {end_pos[1]:.3f}, {end_pos[2]:.3f}]")
+            print(f"Final position: [{end_pos[0]:.3f}, {end_pos[1]:.3f}, {end_pos[2]:.3f}]")
 
-            # Hata hesapla
+            # Calculate the error
             error = math.sqrt(sum((end_pos[j] - target[j])**2 for j in range(3)))
-            print(f"Hata: {error:.3f} m")
+            print(f"Error: {error:.3f} m")
 
-        input("\nDevam etmek için ENTER'a basın...")
+        input("\nPress ENTER to continue...")
 
     def run_test_6(self):
-        """TEST 6: Eklem Pozisyon Grafiği"""
+        """TEST 6: Joint position plot."""
         print("\n" + "="*50)
-        print("TEST 6: Eklem Pozisyon Grafiği")
+        print("TEST 6: Joint Position Plot")
         print("="*50)
-        print("Önceki testlerdeki eklem hareketleri grafiğe dökülecek\n")
+        print("Joint movements from previous tests will be plotted\n")
 
-        # Rastgele hareketler yap ve veri topla
-        print("Rastgele hareketler yapılıyor...")
+        # Make random movements and collect data
+        print("Making random movements...")
         for _ in range(300):
-            # Rastgele hedefler
+            # Random targets
             targets = [np.random.uniform(-1, 1) for _ in range(3)]
             self.set_joint_positions(targets)
 
@@ -372,13 +372,13 @@ class RobotSimulator:
                 self.simulate(1)
                 self.update_joint_history()
 
-        print("Veri toplandı, grafik çiziliyor...")
+        print("Data collected; plotting...")
         self.plot_joint_positions(range(3))
 
-        input("\nDevam etmek için ENTER'a basın...")
+        input("\nPress ENTER to continue...")
 
     def run_all_tests(self):
-        """Tüm testleri sırayla çalıştırır"""
+        """Runs all tests in sequence."""
         self.run_test_1()
         self.run_test_2()
         self.run_test_3()
@@ -386,40 +386,40 @@ class RobotSimulator:
         self.run_test_5()
         self.run_test_6()
 
-        # Özet
+        # Summary
         print("\n" + "="*50)
-        print("TÜM TESTLER TAMAMLANDI")
+        print("ALL TESTS COMPLETE")
         print("="*50)
-        print("✓ Eklem durumlarını okumayı öğrendik")
-        print("✓ Hedef vs gerçek açıları karşılaştırdık")
-        print("✓ Gerçek zamanlı izleme yaptık")
-        print("✓ Son efektör pozisyonunu takip ettik")
-        print("✓ Eklem hareketlerini grafiğe döktük")
-        print("\nSonraki adımlar:")
-        print("- Daha gelişmiş kinematik hesaplamaları")
-        print("- Yol planlama algoritmaları")
-        print("- Çoklu robot koordinasyonu")
+        print("✓ Learned to read joint states")
+        print("✓ Compared target and actual angles")
+        print("✓ Performed real-time monitoring")
+        print("✓ Tracked the end-effector position")
+        print("✓ Plotted joint movements")
+        print("\nNext steps:")
+        print("- More advanced kinematics calculations")
+        print("- Path-planning algorithms")
+        print("- Multi-robot coordination")
         print("="*50)
 
     def disconnect(self):
-        """Simülasyon bağlantısını kapatır"""
+        """Closes the simulation connection."""
         p.disconnect()
-        print("✓ Simülasyon bağlantısı kapatıldı")
+        print("✓ Simulation connection closed")
 
 
 def main():
-    """Ana fonksiyon"""
+    """Main function."""
     try:
-        # Simülatörü başlat
+        # Start the simulator
         sim = RobotSimulator(gui=True)
 
-        # Tüm testleri çalıştır
+        # Run all tests
         sim.run_all_tests()
 
     except Exception as e:
-        print(f"Hata: {e}")
+        print(f"Error: {e}")
     finally:
-        # Bağlantıyı kapat
+        # Close the connection
         if 'sim' in locals():
             sim.disconnect()
 

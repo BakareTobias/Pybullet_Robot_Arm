@@ -1,6 +1,6 @@
 """
-PROJE 1: Akıllı Renk Tanıma ve Sınıflandırma Sistemi
-Robot rastgele renkli küpleri renklerine göre sınıflandıracak
+PROJECT 1: Smart Color Recognition and Classification System
+The robot will sort randomly colored cubes by color.
 """
 
 import pybullet as p
@@ -11,20 +11,20 @@ import numpy as np
 import random
 
 print("="*70)
-print("PROJE 1: AKILLI RENK TANIMA VE SINIFLANDIRMA SİSTEMİ")
+print("PROJECT 1: SMART COLOR RECOGNITION AND CLASSIFICATION SYSTEM")
 print("="*70)
 
 # =====================================================
-# KURULUM
+# SETUP
 # =====================================================
-print("\n→ Simülasyon ortamı hazırlanıyor...")
+print("\n→ Preparing the simulation environment...")
 
 p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -9.81)
 p.loadURDF("plane.urdf")
 
-# Çalışma masası (geniş)
+# Work table (wide)
 masa_collision = p.createCollisionShape(p.GEOM_BOX, halfExtents=[0.5, 0.4, 0.15])
 masa_visual = p.createVisualShape(p.GEOM_BOX, halfExtents=[0.5, 0.4, 0.15],
                                    rgbaColor=[0.6, 0.4, 0.2, 1])
@@ -32,11 +32,11 @@ masa = p.createMultiBody(baseMass=0, baseCollisionShapeIndex=masa_collision,
                          baseVisualShapeIndex=masa_visual,
                          basePosition=[0.6, 0, 0.15])
 
-# Hedef kutuları (renklere göre)
+# Target bins (by color)
 kutu_yukseklik = 0.08
 kutu_genislik = 0.15
 
-# Kırmızı kutu (sol)
+# Red bin (left)
 kirmizi_kutu_collision = p.createCollisionShape(p.GEOM_BOX,
                                                  halfExtents=[kutu_genislik/2, kutu_genislik/2, kutu_yukseklik/2])
 kirmizi_kutu_visual = p.createVisualShape(p.GEOM_BOX,
@@ -47,7 +47,7 @@ kirmizi_kutu = p.createMultiBody(baseMass=0,
                                   baseVisualShapeIndex=kirmizi_kutu_visual,
                                   basePosition=[0.3, 0.25, 0.30 + kutu_yukseklik/2])
 
-# Mavi kutu (orta)
+# Blue bin (center)
 mavi_kutu_collision = p.createCollisionShape(p.GEOM_BOX,
                                               halfExtents=[kutu_genislik/2, kutu_genislik/2, kutu_yukseklik/2])
 mavi_kutu_visual = p.createVisualShape(p.GEOM_BOX,
@@ -58,7 +58,7 @@ mavi_kutu = p.createMultiBody(baseMass=0,
                                baseVisualShapeIndex=mavi_kutu_visual,
                                basePosition=[0.3, 0.0, 0.30 + kutu_yukseklik/2])
 
-# Yeşil kutu (sağ)
+# Green bin (right)
 yesil_kutu_collision = p.createCollisionShape(p.GEOM_BOX,
                                                halfExtents=[kutu_genislik/2, kutu_genislik/2, kutu_yukseklik/2])
 yesil_kutu_visual = p.createVisualShape(p.GEOM_BOX,
@@ -72,7 +72,7 @@ yesil_kutu = p.createMultiBody(baseMass=0,
 # Panda robot
 panda = p.loadURDF("franka_panda/panda.urdf", [0, 0, 0], useFixedBase=True)
 
-# Kamera
+# Camera
 p.resetDebugVisualizerCamera(
     cameraDistance=2.2,
     cameraYaw=50,
@@ -80,22 +80,22 @@ p.resetDebugVisualizerCamera(
     cameraTargetPosition=[0.5, 0, 0.4]
 )
 
-print("✓ Ortam hazır")
-print("  - Çalışma masası ✓")
-print("  - Kırmızı kutu (sol) ✓")
-print("  - Mavi kutu (orta) ✓")
-print("  - Yeşil kutu (sağ) ✓")
+print("✓ Environment ready")
+print("  - Work table ✓")
+print("  - Red bin (left) ✓")
+print("  - Blue bin (center) ✓")
+print("  - Green bin (right) ✓")
 print("  - Panda robot ✓")
 
 # =====================================================
-# ROBOT KONTROLÜ
+# ROBOT CONTROL
 # =====================================================
 
 kol_eklemleri = [0, 1, 2, 3, 4, 5, 6]
 gripper_eklemleri = [9, 10]
 end_effector_index = 11
 
-# Home pozisyonu
+# Home position
 home_angles = [0, -0.785, 0, -2.356, 0, 1.571, 0.785]
 for i, angle in enumerate(home_angles):
     p.resetJointState(panda, kol_eklemleri[i], angle)
@@ -104,7 +104,7 @@ for eklem in gripper_eklemleri:
     p.resetJointState(panda, eklem, 0.04)
 
 def kol_hareket_ettir(hedef_pos, sure=2.0):
-    """Robot kolunu hedef pozisyona götür"""
+    """Move the robot arm to the target position"""
     hedef_orn = p.getQuaternionFromEuler([math.pi, 0, 0])
 
     ik_result = p.calculateInverseKinematics(
@@ -124,8 +124,8 @@ def kol_hareket_ettir(hedef_pos, sure=2.0):
         time.sleep(1./240.)
 
 def gripper_kontrol(komut, kuvvet=80):
-    """Gripper aç/kapat"""
-    hedef = 0.04 if komut == "ac" else 0.0
+    """Open/close the gripper"""
+    hedef = 0.04 if komut == "open" else 0.0
     for eklem in gripper_eklemleri:
         p.setJointMotorControl2(panda, eklem, p.POSITION_CONTROL,
                                targetPosition=hedef, force=kuvvet)
@@ -134,38 +134,39 @@ def gripper_kontrol(komut, kuvvet=80):
         time.sleep(1./240.)
 
 # =====================================================
-# RENK TANIMA SİSTEMİ
+# COLOR RECOGNITION SYSTEM
 # =====================================================
 
-# Renk tanımları (RGB değerleri)
+# Color definitions (RGB values)
 RENKLER = {
-    "kirmizi": {"rgb": [1.0, 0.0, 0.0], "kutu_pos": [0.3, 0.25, 0.38]},
-    "mavi":    {"rgb": [0.0, 0.0, 1.0], "kutu_pos": [0.3, 0.0, 0.38]},
-    "yesil":   {"rgb": [0.0, 1.0, 0.0], "kutu_pos": [0.3, -0.25, 0.38]}
+    "red": {"rgb": [1.0, 0.0, 0.0], "kutu_pos": [0.3, 0.25, 0.38]},
+    "blue":    {"rgb": [0.0, 0.0, 1.0], "kutu_pos": [0.3, 0.0, 0.38]},
+    "green":   {"rgb": [0.0, 1.0, 0.0], "kutu_pos": [0.3, -0.25, 0.38]}
 }
+renk_gosterim = {"red": "red", "blue": "blue", "green": "green"}
 
 def rgb_mesafesi(renk1, renk2):
-    """İki RGB renk arasındaki Euclidean mesafe"""
+    """Euclidean distance between two RGB colors"""
     return math.sqrt(sum([(renk1[i] - renk2[i])**2 for i in range(3)]))
 
 def renk_tani(nesne_id):
     """
-    Nesnenin rengini tanı
+    Identify the object's color
 
     Returns:
-        renk_adi: "kirmizi", "mavi", "yesil"
+        color name: "red", "blue", "green" (internal color keys)
     """
-    # Nesnenin görsel bilgisini al
+    # Get the object's visual information
     visual_data = p.getVisualShapeData(nesne_id)
 
     if len(visual_data) == 0:
         return None
 
-    # RGBA rengini al
+    # Get the RGBA color
     rgba = visual_data[0][7]  # [r, g, b, a]
     nesne_rgb = rgba[:3]
 
-    # En yakın rengi bul
+    # Find the closest color
     en_yakin_renk = None
     en_kucuk_mesafe = float('inf')
 
@@ -179,11 +180,11 @@ def renk_tani(nesne_id):
     return en_yakin_renk
 
 # =====================================================
-# NESNE OLUŞTURMA
+# CREATE OBJECTS
 # =====================================================
 
 def kup_olustur(pozisyon, renk_adi):
-    """Renkli küp oluştur"""
+    """Create a colored cube"""
     renk_rgb = RENKLER[renk_adi]["rgb"]
 
     collision = p.createCollisionShape(p.GEOM_BOX, halfExtents=[0.02, 0.02, 0.02])
@@ -197,192 +198,193 @@ def kup_olustur(pozisyon, renk_adi):
     return nesne
 
 # =====================================================
-# RASTGELE KÜPLER OLUŞTUR
+# CREATE RANDOM CUBES
 # =====================================================
 print("\n" + "="*70)
-print("KÜPLER OLUŞTURULUYOR")
+print("CREATING CUBES")
 print("="*70)
 
-num_cubes = 8  # Toplam küp sayısı
+num_cubes = 8  # Total number of cubes
 nesneler = []
 nesne_renkleri = []
 
-print(f"\n→ {num_cubes} rastgele küp oluşturuluyor...")
+print(f"\n→ Creating {num_cubes} random cubes...")
 
 renk_isimleri = list(RENKLER.keys())
 
 for i in range(num_cubes):
-    # Rastgele pozisyon (masanın sağ tarafı)
+    # Random position (right side of the table)
     x = random.uniform(0.5, 0.7)
     y = random.uniform(-0.25, 0.25)
     z = 0.35
 
-    # Rastgele renk seç
+    # Choose a random color
     renk = random.choice(renk_isimleri)
 
-    # Küpü oluştur
+    # Create the cube
     kup = kup_olustur([x, y, z], renk)
     nesneler.append(kup)
     nesne_renkleri.append(renk)
 
-    print(f"  {i+1}. Küp: {renk:8s} → Pozisyon: ({x:.2f}, {y:.2f}, {z:.2f})")
+    print(f"  {i+1}. Cube: {renk_gosterim[renk]:8s} → Position: ({x:.2f}, {y:.2f}, {z:.2f})")
 
-# Küplerin düşmesini bekle
-print("\n→ Küpler düşüyor...")
+# Wait for the cubes to fall
+print("\n→ Cubes are falling...")
 for _ in range(240):
     p.stepSimulation()
     time.sleep(1./240.)
 
-print("✓ Küpler hazır")
+print("✓ Cubes are ready")
 
-# Renk dağılımını göster
-kirmizi_sayisi = nesne_renkleri.count("kirmizi")
-mavi_sayisi = nesne_renkleri.count("mavi")
-yesil_sayisi = nesne_renkleri.count("yesil")
+# Show the color distribution
+kirmizi_sayisi = nesne_renkleri.count("red")
+mavi_sayisi = nesne_renkleri.count("blue")
+yesil_sayisi = nesne_renkleri.count("green")
 
-print(f"\nRenk Dağılımı:")
-print(f"  🔴 Kırmızı: {kirmizi_sayisi}")
-print(f"  🔵 Mavi:    {mavi_sayisi}")
-print(f"  🟢 Yeşil:   {yesil_sayisi}")
+print(f"\nColor Distribution:")
+print(f"  🔴 Red:   {kirmizi_sayisi}")
+print(f"  🔵 Blue:  {mavi_sayisi}")
+print(f"  🟢 Green: {yesil_sayisi}")
 
-input("\nBaşlamak için ENTER'a basın...\n")
+input("\nPress ENTER to start...\n")
 
 # =====================================================
-# PICK AND PLACE FONKSİYONU
+# PICK-AND-PLACE FUNCTION
 # =====================================================
 
 def pick_and_place_hizli(nesne_id, hedef_pos):
-    """Hızlandırılmış pick-and-place"""
+    """Accelerated pick-and-place"""
     nesne_pos, _ = p.getBasePositionAndOrientation(nesne_id)
 
     # Pick
-    gripper_kontrol("ac")
+    gripper_kontrol("open")
     kol_hareket_ettir([nesne_pos[0], nesne_pos[1], nesne_pos[2] + 0.15], sure=1.5)
     kol_hareket_ettir([nesne_pos[0], nesne_pos[1], nesne_pos[2]], sure=1.2)
-    gripper_kontrol("kapat", kuvvet=100)
+    gripper_kontrol("close", kuvvet=100)
     time.sleep(0.2)
     kol_hareket_ettir([nesne_pos[0], nesne_pos[1], nesne_pos[2] + 0.2], sure=1.2)
 
     # Place
     kol_hareket_ettir([hedef_pos[0], hedef_pos[1], hedef_pos[2] + 0.15], sure=1.5)
     kol_hareket_ettir([hedef_pos[0], hedef_pos[1], hedef_pos[2]], sure=1.0)
-    gripper_kontrol("ac")
+    gripper_kontrol("open")
     time.sleep(0.2)
     kol_hareket_ettir([hedef_pos[0], hedef_pos[1], hedef_pos[2] + 0.15], sure=1.0)
 
 # =====================================================
-# ANA İŞLEM - SINIFLANDIRMA
+# MAIN PROCESS - CLASSIFICATION
 # =====================================================
 print("="*70)
-print("SINIFLANDIRMA BAŞLIYOR")
+print("CLASSIFICATION STARTING")
 print("="*70)
 
 basari_sayisi = 0
 basarisiz_sayisi = 0
 baslangic_zamani = time.time()
 
-# Her renk için sayaç (kutuya kaç küp kondu)
-kutu_sayaclari = {"kirmizi": 0, "mavi": 0, "yesil": 0}
+# Counter for each color (number of cubes placed in each bin)
+kutu_sayaclari = {"red": 0, "blue": 0, "green": 0}
 
 for idx, nesne in enumerate(nesneler, 1):
     print(f"\n{'='*70}")
-    print(f"KÜP {idx}/{num_cubes}")
+    print(f"CUBE {idx}/{num_cubes}")
     print(f"{'='*70}")
 
-    # 1. Renk tanıma
-    print("  [1/4] Renk tanınıyor...")
+    # 1. Color recognition
+    print("  [1/4] Recognizing color...")
     taninan_renk = renk_tani(nesne)
     gercek_renk = nesne_renkleri[idx-1]
+    renk_gosterim = {"red": "RED", "blue": "BLUE", "green": "GREEN"}
 
     if taninan_renk == gercek_renk:
-        print(f"  ✓ Renk: {taninan_renk.upper()}")
+        print(f"  ✓ Color: {renk_gosterim[taninan_renk]}")
         basari_sayisi += 1
     else:
-        print(f"  ✗ Hata! Tanınan: {taninan_renk}, Gerçek: {gercek_renk}")
+        print(f"  ✗ Error! Recognized: {renk_gosterim[taninan_renk]}, Actual: {renk_gosterim[gercek_renk]}")
         basarisiz_sayisi += 1
-        taninan_renk = gercek_renk  # Düzelt
+        taninan_renk = gercek_renk  # Correct it
 
-    # 2. Hedef kutu pozisyonu
+    # 2. Target bin position
     hedef_kutu = RENKLER[taninan_renk]["kutu_pos"]
 
-    # Kutuda zaten küpler varsa, yan yana diz
+    # Arrange cubes side by side if the bin already contains cubes
     offset = kutu_sayaclari[taninan_renk] * 0.045
     hedef_final = [hedef_kutu[0], hedef_kutu[1] + offset - 0.045, hedef_kutu[2]]
 
-    print(f"  [2/4] Hedef: {taninan_renk.upper()} kutusu")
+    print(f"  [2/4] Target: {renk_gosterim[taninan_renk]} bin")
 
-    # 3. Pick and Place
-    print(f"  [3/4] Küp alınıyor...")
+    # 3. Pick and place
+    print(f"  [3/4] Picking up cube...")
     nesne_pos, _ = p.getBasePositionAndOrientation(nesne)
-    print(f"        Pozisyon: ({nesne_pos[0]:.2f}, {nesne_pos[1]:.2f}, {nesne_pos[2]:.2f})")
+    print(f"        Position: ({nesne_pos[0]:.2f}, {nesne_pos[1]:.2f}, {nesne_pos[2]:.2f})")
 
     try:
         pick_and_place_hizli(nesne, hedef_final)
-        print(f"  [4/4] ✓ Küp {taninan_renk} kutusuna kondu!")
+        print(f"  [4/4] ✓ Cube placed in the {renk_gosterim[taninan_renk]} bin!")
         kutu_sayaclari[taninan_renk] += 1
     except:
-        print(f"  [4/4] ✗ Taşıma hatası!")
+        print(f"  [4/4] ✗ Transfer error!")
         basarisiz_sayisi += 1
 
-    # İlerleme çubuğu
+    # Progress bar
     tamamlanan = idx
     kalan = num_cubes - idx
-    print(f"\n  İlerleme: {'█' * tamamlanan}{'░' * kalan} {idx}/{num_cubes}")
+    print(f"\n  Progress: {'█' * tamamlanan}{'░' * kalan} {idx}/{num_cubes}")
 
 bitis_zamani = time.time()
 toplam_sure = bitis_zamani - baslangic_zamani
 
 # =====================================================
-# SONUÇ RAPORU
+# RESULTS REPORT
 # =====================================================
 print("\n" + "="*70)
-print("PROJE TAMAMLANDI - SONUÇ RAPORU")
+print("PROJECT COMPLETE - RESULTS REPORT")
 print("="*70)
 
-print(f"\n📊 PERFORMANS METRİKLERİ:")
-print(f"  ⏱  Toplam Süre: {toplam_sure:.1f} saniye")
-print(f"  📦 İşlenen Küp: {num_cubes}")
-print(f"  ✓ Başarılı: {basari_sayisi}")
-print(f"  ✗ Başarısız: {basarisiz_sayisi}")
-print(f"  📈 Başarı Oranı: {(basari_sayisi/num_cubes)*100:.1f}%")
-print(f"  ⚡ Ortalama İşlem Süresi: {toplam_sure/num_cubes:.1f} saniye/küp")
+print(f"\n📊 PERFORMANCE METRICS:")
+print(f"  ⏱  Total time: {toplam_sure:.1f} seconds")
+print(f"  📦 Cubes processed: {num_cubes}")
+print(f"  ✓ Successful: {basari_sayisi}")
+print(f"  ✗ Failed: {basarisiz_sayisi}")
+print(f"  📈 Success rate: {(basari_sayisi/num_cubes)*100:.1f}%")
+print(f"  ⚡ Average processing time: {toplam_sure/num_cubes:.1f} seconds/cube")
 
-print(f"\n📦 KUTU DURUMU:")
-print(f"  🔴 Kırmızı Kutu: {kutu_sayaclari['kirmizi']} küp")
-print(f"  🔵 Mavi Kutu:    {kutu_sayaclari['mavi']} küp")
-print(f"  🟢 Yeşil Kutu:   {kutu_sayaclari['yesil']} küp")
+print(f"\n📦 BIN STATUS:")
+print(f"  🔴 Red bin:   {kutu_sayaclari['red']} cubes")
+print(f"  🔵 Blue bin:  {kutu_sayaclari['blue']} cubes")
+print(f"  🟢 Green bin: {kutu_sayaclari['green']} cubes")
 
-# Değerlendirme
+# Evaluation
 if basari_sayisi == num_cubes:
-    print(f"\n🎉 MÜKEMMEL! Tüm küpler doğru sınıflandırıldı!")
+    print(f"\n🎉 EXCELLENT! All cubes were classified correctly!")
 elif basari_sayisi >= num_cubes * 0.8:
-    print(f"\n👍 ÇOK İYİ! %{(basari_sayisi/num_cubes)*100:.0f} başarı oranı!")
+    print(f"\n👍 VERY GOOD! Success rate: {(basari_sayisi/num_cubes)*100:.0f}%!")
 else:
-    print(f"\n📝 Geliştirilmeli. Bazı küpler yanlış sınıflandırıldı.")
+    print(f"\n📝 Needs improvement. Some cubes were classified incorrectly.")
 
 print("\n" + "="*70)
-print("PROJE 1 BİTTİ")
+print("PROJECT 1 COMPLETE")
 print("="*70)
 
 print("""
-ÖĞRENDİKLERİMİZ:
-  ✓ Renk tanıma algoritması (RGB mesafesi)
-  ✓ Otomatik nesne sınıflandırma
-  ✓ Performans ölçümleri
-  ✓ Otomasyon sistemi tasarımı
+WHAT WE LEARNED:
+  ✓ Color recognition algorithm (RGB distance)
+  ✓ Automatic object classification
+  ✓ Performance measurements
+  ✓ Automation system design
 
-GERÇEK DÜNYA UYGULAMALARI:
-  - Depo yönetimi (ürün sınıflandırma)
-  - Geri dönüşüm tesisleri (materyal ayırma)
-  - Kalite kontrol (renk bazlı muayene)
-  - Eczane otomasyonu (ilaç sınıflandırma)
+REAL-WORLD APPLICATIONS:
+  - Warehouse management (product sorting)
+  - Recycling facilities (material separation)
+  - Quality control (color-based inspection)
+  - Pharmacy automation (medication sorting)
 
-SONRAKI PROJE:
-  → Proje 2: Computer Vision Entegrasyonu
-    (Kamera ile nesne pozisyonu tespit etme)
+NEXT PROJECT:
+  → Project 2: Computer Vision Integration
+    (Detecting object positions with a camera)
 """)
 
-input("\nSimülasyonu kapatmak için ENTER'a basın...\n")
+input("\nPress ENTER to close the simulation...\n")
 
 p.disconnect()
-print("✓ Simülasyon kapatıldı")
+print("✓ Simulation closed")

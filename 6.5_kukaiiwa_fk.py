@@ -1,6 +1,6 @@
 """
-2-Eklemli Robot - HAZIR ROBOT KULLANIMI
-Kuka robot kullanarak forward kinematics öğreneceğiz
+2-Joint Robot - USING A READY-MADE ROBOT
+We will learn forward kinematics using the Kuka robot
 """
 
 import pybullet as p
@@ -10,65 +10,65 @@ import math
 import numpy as np
 
 print("="*60)
-print("PyBullet ile Robot Kontrol - HAZIR ROBOT")
+print("Robot Control with PyBullet - READY-MADE ROBOT")
 print("="*60)
 
-# Simülasyon başlat
+# Start the simulation
 p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -9.81)
 
-# Zemin
+# Floor
 p.loadURDF("plane.urdf")
-print("✓ Zemin yüklendi")
+print("✓ Floor loaded")
 
-# Kamerayı ayarla
+# Set the camera
 p.resetDebugVisualizerCamera(
     cameraDistance=2.5,
     cameraYaw=50,
     cameraPitch=-35,
     cameraTargetPosition=[0, 0, 0.5]
 )
-print("✓ Kamera ayarlandı")
+print("✓ Camera set")
 
-# KUKA IIWA robot yükle (7-DOF endüstriyel robot)
-# Biz sadece ilk 2 eklemi kullanacağız
+# Load the KUKA IIWA robot (7-DOF industrial robot)
+# We will use only the first 2 joints
 robot = p.loadURDF("kuka_iiwa/model.urdf", [0, 0, 0], useFixedBase=True)
-print(f"✓ Kuka robot yüklendi (ID: {robot})")
+print(f"✓ Kuka robot loaded (ID: {robot})")
 
-# Eklem bilgilerini öğren
+# Get joint information
 num_joints = p.getNumJoints(robot)
-print(f"✓ Toplam eklem sayısı: {num_joints}")
-print("\nEklem detayları:")
+print(f"✓ Total number of joints: {num_joints}")
+print("\nJoint details:")
 
-# Sadece hareketli eklemleri bul
+# Find only the movable joints
 movable_joints = []
 for i in range(num_joints):
     info = p.getJointInfo(robot, i)
     joint_name = info[1].decode('utf-8')
     joint_type = info[2]
 
-    # Type 0 = REVOLUTE (döner eklem)
-    # Type 4 = FIXED (sabit bağlantı)
+    # Type 0 = REVOLUTE (rotating joint)
+    # Type 4 = FIXED (fixed connection)
     if joint_type == p.JOINT_REVOLUTE:
         movable_joints.append(i)
-        print(f"  Eklem {i}: {joint_name} (Hareketli)")
+        print(f"  Joint {i}: {joint_name} (Movable)")
 
-print(f"\n✓ Hareketli eklem sayısı: {len(movable_joints)}")
-print("  İlk 2 eklemi kullanacağız (2-DOF için)")
+print(f"\n✓ Number of movable joints: {len(movable_joints)}")
+print("  We will use the first 2 joints (for 2-DOF)")
 
-# Kullanacağımız eklemler
+# Joints we will use
 joint1_idx = movable_joints[0]
 joint2_idx = movable_joints[1]
 
 def set_joint_position(joint_idx, angle, max_force=200):
     """
-    Bir eklemi belirtilen açıya götür
+    Move a joint to the specified angle.
 
     Args:
-        joint_idx: Eklem indeksi
-        angle: Hedef açı (radyan)
-        max_force: Maksimum motor kuvveti
+        joint_idx: Joint index
+        angle: Target angle (radians)
+        max_force: Maximum motor force
     """
     p.setJointMotorControl2(
         bodyUniqueId=robot,
@@ -77,58 +77,58 @@ def set_joint_position(joint_idx, angle, max_force=200):
         targetPosition=angle,
         force=max_force,
         maxVelocity=1.0,
-        positionGain=0.3,  # PD kontrolcü - P kazancı
-        velocityGain=1.0    # PD kontrolcü - D kazancı
+        positionGain=0.3,  # PD controller - P gain
+        velocityGain=1.0    # PD controller - D gain
     )
 
 def get_joint_position(joint_idx):
-    """Eklemin gerçek açısını al"""
+    """Get the actual joint angle."""
     state = p.getJointState(robot, joint_idx)
-    return state[0]  # Pozisyon (radyan)
+    return state[0]  # Position (radians)
 
 def get_end_effector_position():
     """
-    End-effector'ın pozisyonunu al
-    (Son linkin pozisyonu)
+    Get the end-effector position.
+    (Position of the last link)
     """
     # Link state: [pos, orn, local_inertial_pos, ...]
-    # Link 6 = end-effector (Kuka'da 7 link var, 0-6)
+    # Link 6 = end-effector (Kuka has 7 links, 0-6)
     state = p.getLinkState(robot, 6)
-    return state[0]  # (x, y, z) pozisyon
+    return state[0]  # (x, y, z) position
 
 def reset_robot():
-    """Robotu başlangıç pozisyonuna getir"""
-    print("\n→ Robot sıfırlanıyor (tüm eklemler 0°)...")
+    """Move the robot to the initial position."""
+    print("\n→ Resetting the robot (all joints to 0°)...")
     for i in movable_joints:
         set_joint_position(i, 0, max_force=200)
 
-    # Hareketin tamamlanmasını bekle
+    # Wait for the movement to complete
     for _ in range(240):
         p.stepSimulation()
         time.sleep(1./240.)
-    print("  ✓ Robot sıfırlandı")
+    print("  ✓ Robot reset")
 
-# Marker (yeşil küre) için global değişken
+# Global variable for the marker (green sphere)
 marker_id = None
 
 def visualize_target(x, y, z, color=[0, 1, 0, 0.7]):
     """
-    Hedef pozisyonu görselleştir
+    Visualize the target position.
 
     Args:
-        x, y, z: Hedef pozisyon
-        color: RGBA renk [r, g, b, a]
+        x, y, z: Target position
+        color: RGBA color [r, g, b, a]
     """
     global marker_id
 
-    # Eski marker'ı sil
+    # Remove the old marker
     if marker_id is not None:
         try:
             p.removeBody(marker_id)
         except:
             pass
 
-    # Yeni marker oluştur
+    # Create a new marker
     visual_shape = p.createVisualShape(
         shapeType=p.GEOM_SPHERE,
         radius=0.05,
@@ -142,21 +142,21 @@ def visualize_target(x, y, z, color=[0, 1, 0, 0.7]):
     )
 
 print("\n" + "="*60)
-print("FORWARD KİNEMATİK TESTLERİ")
+print("FORWARD KINEMATICS TESTS")
 print("="*60)
 
-# Robot'u sıfırla
+# Reset the robot
 reset_robot()
 
-# TEST 1: Her iki eklem 0°
-print("\n[TEST 1] Her iki eklem 0° (Varsayılan duruş)")
+# TEST 1: Both joints at 0°
+print("\n[TEST 1] Both joints at 0° (default pose)")
 target_j1 = 0.0
 target_j2 = 0.0
 
 set_joint_position(joint1_idx, target_j1)
 set_joint_position(joint2_idx, target_j2)
 
-print("  Hareket ediliyor...", end="", flush=True)
+print("  Moving...", end="", flush=True)
 for i in range(300):
     p.stepSimulation()
     time.sleep(1./240.)
@@ -164,28 +164,28 @@ for i in range(300):
         print(".", end="", flush=True)
 print(" ✓")
 
-# Sonuçları göster
+# Show the results
 real_j1 = get_joint_position(joint1_idx)
 real_j2 = get_joint_position(joint2_idx)
 ee_pos = get_end_effector_position()
 
-print(f"  Hedef: θ1={math.degrees(target_j1):.1f}°, θ2={math.degrees(target_j2):.1f}°")
-print(f"  Gerçek: θ1={math.degrees(real_j1):.1f}°, θ2={math.degrees(real_j2):.1f}°")
-print(f"  End-effector pozisyonu: ({ee_pos[0]:.3f}, {ee_pos[1]:.3f}, {ee_pos[2]:.3f})")
+print(f"  Target: θ1={math.degrees(target_j1):.1f}°, θ2={math.degrees(target_j2):.1f}°")
+print(f"  Actual: θ1={math.degrees(real_j1):.1f}°, θ2={math.degrees(real_j2):.1f}°")
+print(f"  End-effector position: ({ee_pos[0]:.3f}, {ee_pos[1]:.3f}, {ee_pos[2]:.3f})")
 
 visualize_target(ee_pos[0], ee_pos[1], ee_pos[2])
 
-input("\n→ Devam için ENTER'a basın...")
+input("\n→ Press ENTER to continue...")
 
-# TEST 2: İlk eklem 45°
-print("\n[TEST 2] İlk eklem 45°, ikinci eklem 0°")
+# TEST 2: First joint at 45°
+print("\n[TEST 2] First joint at 45°, second joint at 0°")
 target_j1 = math.radians(45)  # 45 derece
 target_j2 = 0.0
 
 set_joint_position(joint1_idx, target_j1)
 set_joint_position(joint2_idx, target_j2)
 
-print("  Hareket ediliyor...", end="", flush=True)
+print("  Moving...", end="", flush=True)
 for i in range(300):
     p.stepSimulation()
     time.sleep(1./240.)
@@ -197,23 +197,23 @@ real_j1 = get_joint_position(joint1_idx)
 real_j2 = get_joint_position(joint2_idx)
 ee_pos = get_end_effector_position()
 
-print(f"  Hedef: θ1={math.degrees(target_j1):.1f}°, θ2={math.degrees(target_j2):.1f}°")
-print(f"  Gerçek: θ1={math.degrees(real_j1):.1f}°, θ2={math.degrees(real_j2):.1f}°")
-print(f"  End-effector pozisyonu: ({ee_pos[0]:.3f}, {ee_pos[1]:.3f}, {ee_pos[2]:.3f})")
+print(f"  Target: θ1={math.degrees(target_j1):.1f}°, θ2={math.degrees(target_j2):.1f}°")
+print(f"  Actual: θ1={math.degrees(real_j1):.1f}°, θ2={math.degrees(real_j2):.1f}°")
+print(f"  End-effector position: ({ee_pos[0]:.3f}, {ee_pos[1]:.3f}, {ee_pos[2]:.3f})")
 
-visualize_target(ee_pos[0], ee_pos[1], ee_pos[2], [1, 0, 0, 0.7])  # Kırmızı
+visualize_target(ee_pos[0], ee_pos[1], ee_pos[2], [1, 0, 0, 0.7])  # Red
 
-input("\n→ Devam için ENTER'a basın...")
+input("\n→ Press ENTER to continue...")
 
-# TEST 3: Her iki eklem 45°
-print("\n[TEST 3] Her iki eklem 45°")
+# TEST 3: Both joints at 45°
+print("\n[TEST 3] Both joints at 45°")
 target_j1 = math.radians(45)
 target_j2 = math.radians(45)
 
 set_joint_position(joint1_idx, target_j1)
 set_joint_position(joint2_idx, target_j2)
 
-print("  Hareket ediliyor...", end="", flush=True)
+print("  Moving...", end="", flush=True)
 for i in range(300):
     p.stepSimulation()
     time.sleep(1./240.)
@@ -225,23 +225,23 @@ real_j1 = get_joint_position(joint1_idx)
 real_j2 = get_joint_position(joint2_idx)
 ee_pos = get_end_effector_position()
 
-print(f"  Hedef: θ1={math.degrees(target_j1):.1f}°, θ2={math.degrees(target_j2):.1f}°")
-print(f"  Gerçek: θ1={math.degrees(real_j1):.1f}°, θ2={math.degrees(real_j2):.1f}°")
-print(f"  End-effector pozisyonu: ({ee_pos[0]:.3f}, {ee_pos[1]:.3f}, {ee_pos[2]:.3f})")
+print(f"  Target: θ1={math.degrees(target_j1):.1f}°, θ2={math.degrees(target_j2):.1f}°")
+print(f"  Actual: θ1={math.degrees(real_j1):.1f}°, θ2={math.degrees(real_j2):.1f}°")
+print(f"  End-effector position: ({ee_pos[0]:.3f}, {ee_pos[1]:.3f}, {ee_pos[2]:.3f})")
 
-visualize_target(ee_pos[0], ee_pos[1], ee_pos[2], [0, 0, 1, 0.7])  # Mavi
+visualize_target(ee_pos[0], ee_pos[1], ee_pos[2], [0, 0, 1, 0.7])  # Blue
 
-input("\n→ Devam için ENTER'a basın...")
+input("\n→ Press ENTER to continue...")
 
-# TEST 4: Negatif açılar
-print("\n[TEST 4] İlk eklem -45°, ikinci eklem 30°")
+# TEST 4: Negative angles
+print("\n[TEST 4] First joint at -45°, second joint at 30°")
 target_j1 = math.radians(-45)
 target_j2 = math.radians(30)
 
 set_joint_position(joint1_idx, target_j1)
 set_joint_position(joint2_idx, target_j2)
 
-print("  Hareket ediliyor...", end="", flush=True)
+print("  Moving...", end="", flush=True)
 for i in range(300):
     p.stepSimulation()
     time.sleep(1./240.)
@@ -253,32 +253,32 @@ real_j1 = get_joint_position(joint1_idx)
 real_j2 = get_joint_position(joint2_idx)
 ee_pos = get_end_effector_position()
 
-print(f"  Hedef: θ1={math.degrees(target_j1):.1f}°, θ2={math.degrees(target_j2):.1f}°")
-print(f"  Gerçek: θ1={math.degrees(real_j1):.1f}°, θ2={math.degrees(real_j2):.1f}°")
-print(f"  End-effector pozisyonu: ({ee_pos[0]:.3f}, {ee_pos[1]:.3f}, {ee_pos[2]:.3f})")
+print(f"  Target: θ1={math.degrees(target_j1):.1f}°, θ2={math.degrees(target_j2):.1f}°")
+print(f"  Actual: θ1={math.degrees(real_j1):.1f}°, θ2={math.degrees(real_j2):.1f}°")
+print(f"  End-effector position: ({ee_pos[0]:.3f}, {ee_pos[1]:.3f}, {ee_pos[2]:.3f})")
 
-visualize_target(ee_pos[0], ee_pos[1], ee_pos[2], [1, 1, 0, 0.7])  # Sarı
+visualize_target(ee_pos[0], ee_pos[1], ee_pos[2], [1, 1, 0, 0.7])  # Yellow
 
-input("\n→ Animasyona geçmek için ENTER'a basın...")
+input("\n→ Press ENTER to start the animation...")
 
-# SÜREKLI ANİMASYON
+# CONTINUOUS ANIMATION
 print("\n" + "="*60)
-print("SÜREKLI ANİMASYON")
-print("Robot düzgün bir şekilde sallanacak")
-print("Kapatmak için CTRL+C yapın")
+print("CONTINUOUS ANIMATION")
+print("The robot will swing smoothly")
+print("Press CTRL+C to close")
 print("="*60)
 
 t = 0
 try:
     while True:
-        # Sinüzoidal hareket (yumuşak)
-        theta1 = 0.5 * math.sin(t * 0.5)      # Yavaş sallanma
-        theta2 = 0.3 * math.cos(t * 0.7)      # Farklı frekansta
+        # Sinusoidal movement (smooth)
+        theta1 = 0.5 * math.sin(t * 0.5)      # Slow swing
+        theta2 = 0.3 * math.cos(t * 0.7)      # At a different frequency
 
         set_joint_position(joint1_idx, theta1)
         set_joint_position(joint2_idx, theta2)
 
-        # End-effector pozisyonunu göster
+        # Show the end-effector position
         ee_pos = get_end_effector_position()
         visualize_target(ee_pos[0], ee_pos[1], ee_pos[2])
 
@@ -287,14 +287,14 @@ try:
         t += 0.02
 
 except KeyboardInterrupt:
-    print("\n\n✓ Simülasyon durduruldu")
+    print("\n\n✓ Simulation stopped")
 
 p.disconnect()
-print("✓ PyBullet kapatıldı")
+print("✓ PyBullet closed")
 print("\n" + "="*60)
-print("ÖZET")
+print("SUMMARY")
 print("="*60)
-print("✓ Forward Kinematics başarıyla test edildi")
-print("✓ Robot kontrol sistemi çalışıyor")
-print("✓ Sonraki ders: Inverse Kinematics")
+print("✓ Forward Kinematics tested successfully")
+print("✓ Robot control system is working")
+print("✓ Next lesson: Inverse Kinematics")
 print("="*60)

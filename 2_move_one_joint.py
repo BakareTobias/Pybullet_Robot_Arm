@@ -1,52 +1,52 @@
 """
-DERS 1: Tek Eklem Hareketi
-Sadece 1 eklemi hareket ettireceğiz - En basit robot kontrolü
+LESSON 1: Single Joint Movement
+We will move only one joint - the simplest robot control
 """
 
 import pybullet as p
 import pybullet_data
 import time
 
-# ADIM 1: Simülasyonu başlat (pencere aç)
+# STEP 1: Start the simulation (open the window)
 p.connect(p.GUI)
 p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
-print("✓ Pencere açıldı")
+print("✓ Window opened")
 
-# ADIM 1.5: PyBullet'in robot klasörünü ekle (ÖNEMLİ!)
+# STEP 1.5: Add PyBullet's robot directory (IMPORTANT!)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
-print("✓ Robot klasörü eklendi")
+print("✓ Robot directory added")
 
-# ADIM 2: Kuka robotunu yükle
+# STEP 2: Load the Kuka robot
 robot = p.loadURDF("kuka_iiwa/model.urdf", [0, 0, 0], useFixedBase=True)
-print("✓ Robot yüklendi")
+print("✓ Robot loaded")
 
-# ADIM 3: Yerçekimini aç
+# STEP 3: Enable gravity
 p.setGravity(0, 0, -9.81)
-print("✓ Yerçekimi ayarlandı")
+print("✓ Gravity set")
 
-# ADIM 4: İlk eklemi 45 dereceye götür
-print("\nRobot ilk eklemini 45 dereceye hareket ettiriyor...")
+# STEP 4: Move the first joint to 45 degrees
+print("\nMoving the robot's first joint to 45 degrees...")
 
-# 45 derece = 0.785 radyan
+# 45 degrees = 0.785 radians
 target_angle = 0.785
 
-# Eklem 0'ı (ilk eklem) kontrol et
+# Control joint 0 (the first joint)
 p.setJointMotorControl2(
-    bodyUniqueId=robot,      # Hangi robot
-    jointIndex=1,            # Hangi eklem (0 = ilk)
-    controlMode=p.POSITION_CONTROL,  # "Bu açıya git" modu
-    targetPosition=target_angle  # Hedef açı
+    bodyUniqueId=robot,      # Which robot
+    jointIndex=1,            # Which joint (0 = first)
+    controlMode=p.POSITION_CONTROL,  # "Move to this angle" mode
+    targetPosition=target_angle  # Target angle
 )
 
-# ADIM 5: Simülasyonu çalıştır (robot hareket edecek)
+# STEP 5: Run the simulation (the robot will move)
 for i in range(1000):
-    p.stepSimulation()   # Fiziği 1 adım ilerlet
-    time.sleep(1./240.)  # Yavaş görmek için bekle
+    p.stepSimulation()   # Advance physics by one step
+    time.sleep(1./240.)  # Wait to observe the motion slowly
 
-print("✓ Hareket tamamlandı!")
-print("\nPencereyi kapatmak için CTRL+C yapın")
+print("✓ Movement complete!")
+print("\nPress CTRL+C to close the window")
 
-# Pencereyi açık tut
+# Keep the window open
 while True:
     p.stepSimulation()
     time.sleep(1./240.)

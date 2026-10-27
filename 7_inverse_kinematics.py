@@ -1,6 +1,6 @@
 """
-DERS 6: Inverse Kinematics (Ters Kinematik)
-"Eli şu noktaya götür" → Eklem açılarını hesapla
+LESSON 6: Inverse Kinematics
+"Move the hand to this point" → Calculate the joint angles
 """
 
 import pybullet as p
@@ -9,53 +9,53 @@ import time
 import math
 
 print("="*60)
-print("DERS 6: INVERSE KINEMATICS")
+print("LESSON 6: INVERSE KINEMATICS")
 print("="*60)
 
 # =====================================================
-# BÖLÜM 1: Inverse Kinematics Nedir?
+# SECTION 1: What Is Inverse Kinematics?
 # =====================================================
-print("\nBÖLÜM 1: Kavram")
+print("\nSECTION 1: Concept")
 print("-"*60)
 print("""
 Forward Kinematics (FK):
-  Girdi  : θ1, θ2 (eklem açıları)
-  Çıktı  : (x, y) el pozisyonu
-  Örnek  : θ1=45°, θ2=30° → x=1.2m, y=0.8m
+  Input  : θ1, θ2 (joint angles)
+  Output : (x, y) hand position
+  Example: θ1=45°, θ2=30° → x=1.2m, y=0.8m
 
 Inverse Kinematics (IK):
-  Girdi  : (x, y) hedef pozisyon
-  Çıktı  : θ1, θ2 (gerekli eklem açıları)
-  Örnek  : x=1.2m, y=0.8m → θ1=?, θ2=?
+  Input  : (x, y) target position
+  Output : θ1, θ2 (required joint angles)
+  Example: x=1.2m, y=0.8m → θ1=?, θ2=?
 
-Problem: Matematik daha zor!
-  - Bazen birden fazla çözüm var
-  - Bazen hiç çözüm yok (ulaşılamaz nokta)
+Problem: The mathematics is more difficult!
+  - Sometimes there are multiple solutions
+  - Sometimes there is no solution (unreachable point)
 """)
 
-input("Devam için ENTER'a basın...\n")
+input("Press ENTER to continue...\n")
 
 # =====================================================
-# BÖLÜM 2: PyBullet'in IK'sini Kullanma
+# SECTION 2: Using PyBullet's IK
 # =====================================================
 print("="*60)
-print("BÖLÜM 2: PyBullet'in Otomatik IK'si")
+print("SECTION 2: PyBullet's Automatic IK")
 print("="*60)
 
-# Simülasyon başlat
+# Start the simulation
 p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -9.81)
-print("✓ Simülasyon başladı")
+print("✓ Simulation started")
 
-# Robot yükle
+# Load the robot
 robot = p.loadURDF("kuka_iiwa/model.urdf", [0, 0, 0], useFixedBase=True)
-print("✓ Kuka robot yüklendi")
+print("✓ Kuka robot loaded")
 
-# Zemin ekle
+# Add a floor
 p.loadURDF("plane.urdf")
 
-# Kamerayı ayarla
+# Set the camera
 p.resetDebugVisualizerCamera(
     cameraDistance=2.0,
     cameraYaw=45,
@@ -78,10 +78,10 @@ def simule_et(adim):
         p.stepSimulation()
         time.sleep(1./240.)
 
-# Hedef göstermek için marker
+# Marker for showing the target
 marker = None
 def hedef_goster(x, y, z, renk=[1, 0, 0, 0.8]):
-    """Hedef pozisyonu kırmızı küre ile göster"""
+    """Show the target position with a red sphere."""
     global marker
     if marker is not None:
         try:
@@ -93,25 +93,25 @@ def hedef_goster(x, y, z, renk=[1, 0, 0, 0.8]):
     marker = p.createMultiBody(0, baseVisualShapeIndex=gorsel, basePosition=[x, y, z])
 
 # =====================================================
-# PyBullet IK Fonksiyonu
+# PyBullet IK Function
 # =====================================================
-print("\nPyBullet'in calculateInverseKinematics() fonksiyonu:")
-print("  Hedef pozisyon verirsiniz → Tüm eklem açılarını hesaplar\n")
+print("\nPyBullet's calculateInverseKinematics() function:")
+print("  Provide a target position → It calculates all joint angles\n")
 
 def pybullet_ik(hedef_x, hedef_y, hedef_z):
     """
-    PyBullet'in IK çözücüsünü kullan
+    Use PyBullet's IK solver.
 
-    Parametreler:
-        hedef_x, hedef_y, hedef_z: Hedef pozisyon
+    Parameters:
+        hedef_x, hedef_y, hedef_z: Target position
 
-    Döndürür:
-        eklem_acilari: 7 eklem için açılar (tuple)
+    Returns:
+        eklem_acilari: Angles for 7 joints (tuple)
     """
     # End-effector = Link 6
     end_effector_index = 6
 
-    # IK hesapla
+    # Calculate IK
     eklem_acilari = p.calculateInverseKinematics(
         bodyUniqueId=robot,
         endEffectorLinkIndex=end_effector_index,
@@ -121,116 +121,116 @@ def pybullet_ik(hedef_x, hedef_y, hedef_z):
     return eklem_acilari
 
 # =====================================================
-# TEST 1: İlk IK Testi
+# TEST 1: First IK Test
 # =====================================================
 print("="*60)
-print("TEST 1: İlk IK Hesaplama")
+print("TEST 1: First IK Calculation")
 print("="*60)
 
 hedef = [0.4, 0.3, 0.5]  # (x, y, z)
-print(f"\nHedef pozisyon: x={hedef[0]}, y={hedef[1]}, z={hedef[2]}")
+print(f"\nTarget position: x={hedef[0]}, y={hedef[1]}, z={hedef[2]}")
 
-# Hedefi göster (kırmızı küre)
+# Show the target (red sphere)
 hedef_goster(hedef[0], hedef[1], hedef[2])
 
-print("  → IK hesaplanıyor...")
+print("  → Calculating IK...")
 eklem_acilari = pybullet_ik(hedef[0], hedef[1], hedef[2])
 
-print(f"  ✓ Hesaplanan eklem açıları (derece):")
+print(f"  ✓ Calculated joint angles (degrees):")
 for i in range(7):
-    print(f"    Eklem {i}: {math.degrees(eklem_acilari[i]):6.1f}°")
+    print(f"    Joint {i}: {math.degrees(eklem_acilari[i]):6.1f}°")
 
-print("\n  → Robotu hesaplanan açılara götürüyorum...")
+print("\n  → Moving the robot to the calculated angles...")
 for i in range(7):
     eklem_hareket_ettir(i, eklem_acilari[i])
 
 simule_et(500)
 
-# Gerçek pozisyonu kontrol et
+# Check the actual position
 durum = p.getLinkState(robot, 6)
 gercek_pos = durum[0]
-print(f"\n  ✓ Robot eli ulaştı!")
-print(f"    Hedef    : ({hedef[0]:.3f}, {hedef[1]:.3f}, {hedef[2]:.3f})")
-print(f"    Gerçek   : ({gercek_pos[0]:.3f}, {gercek_pos[1]:.3f}, {gercek_pos[2]:.3f})")
+print(f"\n  ✓ The robot hand reached the target!")
+print(f"    Target   : ({hedef[0]:.3f}, {hedef[1]:.3f}, {hedef[2]:.3f})")
+print(f"    Actual   : ({gercek_pos[0]:.3f}, {gercek_pos[1]:.3f}, {gercek_pos[2]:.3f})")
 
-# Hata hesapla
+# Calculate the error
 hata = math.sqrt(
     (hedef[0]-gercek_pos[0])**2 +
     (hedef[1]-gercek_pos[1])**2 +
     (hedef[2]-gercek_pos[2])**2
 )
-print(f"    Hata     : {hata*1000:.1f} mm")
+print(f"    Error    : {hata*1000:.1f} mm")
 
-input("\nDevam için ENTER'a basın...\n")
+input("\nPress ENTER to continue...\n")
 
 # =====================================================
-# TEST 2: Birden Fazla Hedef
+# TEST 2: Multiple Targets
 # =====================================================
 print("="*60)
-print("TEST 2: Robot 5 Farklı Noktaya Gidecek")
+print("TEST 2: The Robot Will Move to 5 Different Points")
 print("="*60)
 
 hedefler = [
-    ([0.5, 0.0, 0.5], [1, 0, 0, 0.8]),   # Kırmızı
-    ([0.3, 0.3, 0.8], [0, 1, 0, 0.8]),   # Yeşil
-    ([0.0, 0.5, 0.4], [0, 0, 1, 0.8]),   # Mavi
-    ([0.4, -0.2, 0.6], [1, 1, 0, 0.8]),  # Sarı
-    ([0.2, 0.2, 0.3], [1, 0, 1, 0.8])    # Mor
+    ([0.5, 0.0, 0.5], [1, 0, 0, 0.8]),   # Red
+    ([0.3, 0.3, 0.8], [0, 1, 0, 0.8]),   # Green
+    ([0.0, 0.5, 0.4], [0, 0, 1, 0.8]),   # Blue
+    ([0.4, -0.2, 0.6], [1, 1, 0, 0.8]),  # Yellow
+    ([0.2, 0.2, 0.3], [1, 0, 1, 0.8])    # Purple
 ]
 
 for idx, (hedef, renk) in enumerate(hedefler, 1):
     x, y, z = hedef
 
-    print(f"\nHedef {idx}: ({x:.2f}, {y:.2f}, {z:.2f})")
+    print(f"\nTarget {idx}: ({x:.2f}, {y:.2f}, {z:.2f})")
 
-    # Hedefi göster
+    # Show the target
     hedef_goster(x, y, z, renk)
 
-    # IK hesapla
+    # Calculate IK
     eklem_acilari = pybullet_ik(x, y, z)
 
-    # Robotu hareket ettir
+    # Move the robot
     for i in range(7):
         eklem_hareket_ettir(i, eklem_acilari[i])
 
     simule_et(400)
 
-    # Doğrulama
+    # Verify
     durum = p.getLinkState(robot, 6)
     gercek = durum[0]
     hata = math.sqrt((x-gercek[0])**2 + (y-gercek[1])**2 + (z-gercek[2])**2)
-    print(f"  ✓ Ulaştı! Hata: {hata*1000:.1f} mm")
+    print(f"  ✓ Reached! Error: {hata*1000:.1f} mm")
 
     time.sleep(0.5)
 
-print("\n✓ Tüm hedeflere başarıyla ulaşıldı!")
+print("\n✓ All targets reached successfully!")
 
-input("\nDevam için ENTER'a basın...\n")
+input("\nPress ENTER to continue...\n")
 
 # =====================================================
-# TEST 3: Ulaşılamayan Nokta
+# TEST 3: Unreachable Point
 # =====================================================
 print("="*60)
-print("TEST 3: Ulaşılamayan Nokta")
+print("TEST 3: Unreachable Point")
 print("="*60)
 
-# Çok uzak bir nokta
+# A point that is very far away
 hedef_uzak = [2.0, 2.0, 2.0]
-print(f"\nÇok uzak hedef: ({hedef_uzak[0]}, {hedef_uzak[1]}, {hedef_uzak[2]})")
-print("  (Robot'un maksimum erişimi ~1.5m civarı)")
+print(f"\nVery distant target: ({hedef_uzak[0]}, {hedef_uzak[1]}, {hedef_uzak[2]})")
+print("  (The robot's maximum reach is around ~1.5m)")
 
 hedef_goster(hedef_uzak[0], hedef_uzak[1], hedef_uzak[2], [1, 0.5, 0, 0.8])
 
-print("\n  → IK hesaplanıyor...")
+print("\n  → Calculating IK...")
 eklem_acilari = pybullet_ik(hedef_uzak[0], hedef_uzak[1], hedef_uzak[2])
 
-print("  → Robot en yakın pozisyona gidiyor...")
+print("  → The robot is moving to the nearest position...")
 for i in range(7):
     eklem_hareket_ettir(i, eklem_acilari[i])
 
 simule_et(500)
 
-# Gerçek pozisyon
+# Actual position
 durum = p.getLinkState(robot, 6)
 gercek = durum[0]
 hata = math.sqrt(
@@ -239,49 +239,49 @@ hata = math.sqrt(
     (hedef_uzak[2]-gercek[2])**2
 )
 
-print(f"\n  Hedef    : ({hedef_uzak[0]:.3f}, {hedef_uzak[1]:.3f}, {hedef_uzak[2]:.3f})")
-print(f"  Ulaşılan : ({gercek[0]:.3f}, {gercek[1]:.3f}, {gercek[2]:.3f})")
-print(f"  Hata     : {hata:.3f} m = {hata*100:.1f} cm")
-print("\n  ⚠ Robot hedefe tam ulaşamadı (çok uzak!)")
-print("     Ama mümkün olan en yakın noktaya gitti.")
+print(f"\n  Target   : ({hedef_uzak[0]:.3f}, {hedef_uzak[1]:.3f}, {hedef_uzak[2]:.3f})")
+print(f"  Reached  : ({gercek[0]:.3f}, {gercek[1]:.3f}, {gercek[2]:.3f})")
+print(f"  Error    : {hata:.3f} m = {hata*100:.1f} cm")
+print("\n  ⚠ The robot could not reach the target exactly (too far away!)")
+print("     But it moved to the nearest possible point.")
 
-input("\nDevam için ENTER'a basın...\n")
+input("\nPress ENTER to continue...\n")
 
 # =====================================================
-# TEST 4: İnteraktif Mod
+# TEST 4: Interactive Mode
 # =====================================================
 print("="*60)
-print("TEST 4: İnteraktif - Fareyle Hedef Belirleme")
+print("TEST 4: Interactive - Set a Target with the Mouse")
 print("="*60)
 print("""
-Şimdi fareyle tıklayarak hedef belirleyebilirsiniz!
+You can now set a target by clicking with the mouse!
 
-Nasıl kullanılır:
-  1. PyBullet penceresinde bir yere tıklayın
-  2. Robot o noktaya gitmeye çalışacak
-  3. CTRL+C ile durdurun
+How to use:
+  1. Click somewhere in the PyBullet window
+  2. The robot will try to move to that point
+  3. Stop with CTRL+C
 
-Not: Bu basit bir örnek, mouse_click eventi yok ama
-     rastgele hedefler üretip robot göndereceğiz (demo için)
+Note: This is a simple example; there is no mouse_click event, so
+      we will generate random targets and send the robot to them (for the demo).
 """)
 
-input("İnteraktif moda başlamak için ENTER'a basın...\n")
+input("Press ENTER to start interactive mode...\n")
 
-print("10 saniye boyunca robot rastgele hedeflere gidecek...")
-print("(Gerçek uygulamada mouse tıklamaları kullanılır)\n")
+print("The robot will move to random targets for 10 seconds...")
+print("(In a real application, mouse clicks would be used)\n")
 
 import random
 
 baslangic = time.time()
 while time.time() - baslangic < 10:
-    # Rastgele hedef (workspace içinde)
+    # Random target (within the workspace)
     x = random.uniform(0.2, 0.6)
     y = random.uniform(-0.3, 0.3)
     z = random.uniform(0.3, 0.8)
 
-    print(f"\rHedef: ({x:.2f}, {y:.2f}, {z:.2f})", end="")
+    print(f"\rTarget: ({x:.2f}, {y:.2f}, {z:.2f})", end="")
 
-    # IK ve hareket
+    # IK and movement
     hedef_goster(x, y, z)
     eklem_acilari = pybullet_ik(x, y, z)
 
@@ -290,33 +290,33 @@ while time.time() - baslangic < 10:
 
     simule_et(100)
 
-print("\n\n✓ İnteraktif mod tamamlandı!")
+print("\n\n✓ Interactive mode complete!")
 
 # =====================================================
-# ÖZET
+# SUMMARY
 # =====================================================
 print("\n" + "="*60)
-print("DERS 6 ÖZET")
+print("LESSON 6 SUMMARY")
 print("="*60)
 print("""
-ÖĞRENDİKLERİMİZ:
-✓ Inverse Kinematics kavramı
-✓ PyBullet'in IK çözücüsü (calculateInverseKinematics)
-✓ Hedef pozisyon → Eklem açıları
-✓ Ulaşılabilir/ulaşılamayan noktalar
-✓ Hata hesaplama
+WHAT WE LEARNED:
+✓ The concept of Inverse Kinematics
+✓ PyBullet's IK solver (calculateInverseKinematics)
+✓ Target position → Joint angles
+✓ Reachable/unreachable points
+✓ Error calculation
 
-KULLANIM:
+USAGE:
   eklem_acilari = p.calculateInverseKinematics(
       robot,
       end_effector_index,
       [hedef_x, hedef_y, hedef_z]
   )
 
-SONRAKI DERS:
-→ Kendi IK algoritmanı yazma (Jacobian yöntemi)
-  (İleri seviye, ama merak ediyorsanız devam edelim!)
+NEXT LESSON:
+→ Writing your own IK algorithm (Jacobian method)
+  (Advanced, but let's continue if you're curious!)
 """)
 
 p.disconnect()
-print("\n✓ PyBullet kapatıldı")
+print("\n✓ PyBullet closed")

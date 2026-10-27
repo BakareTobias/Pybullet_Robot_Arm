@@ -31,7 +31,7 @@ for i in range(num_joints):
     type_str = {0: "REVOLUTE", 1: "PRISMATIC", 4: "FIXED"}.get(joint_type, "?")
 
     if i in arm_joints:
-        print(f"  {i:2d}: {joint_name:30s} {type_str:10s} ← KOL ✓")
+        print(f"  {i:2d}: {joint_name:30s} {type_str:10s} ← ARM ✓")
     elif i in gripper_joints:
         print(f"  {i:2d}: {joint_name:30s} {type_str:10s} ← GRIPPER ✋")
     else:

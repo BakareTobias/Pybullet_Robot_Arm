@@ -1,6 +1,6 @@
 """
-DERS 8: Collision Avoidance (Çarpışma Önleme)
-Robot engellerden kaçarak hedefe ulaşacak
+LESSON 8: Collision Avoidance
+The robot will reach the target while avoiding obstacles
 """
 
 import pybullet as p
@@ -10,53 +10,53 @@ import math
 import numpy as np
 
 print("="*60)
-print("DERS 8: COLLISION AVOIDANCE")
+print("LESSON 8: COLLISION AVOIDANCE")
 print("="*60)
 
 # =====================================================
-# BÖLÜM 1: Çarpışma Tespiti
+# SECTION 1: Collision Detection
 # =====================================================
-print("\nBÖLÜM 1: Çarpışma Tespiti Nasıl Çalışır?")
+print("\nSECTION 1: How Does Collision Detection Work?")
 print("-"*60)
 print("""
-PyBullet'te 2 çarpışma kontrol yöntemi var:
+PyBullet has two collision-checking methods:
 
-1. getContactPoints(): Fiziksel temas oldu mu?
-   - Gerçek zamanlı
-   - Çarpışma SONRASI tespit
-   - "Ups, çarptık!" ✗
+1. getContactPoints(): Has physical contact occurred?
+   - Real-time
+   - Detects collisions AFTER they happen
+   - "Oops, we hit it!" ✗
 
-2. getClosestPoints(): En yakın mesafe ne?
-   - Önceden kontrol
-   - Çarpışma ÖNCESİ tespit
-   - "Yaklaşıyoruz, dön!" ✓
+2. getClosestPoints(): What is the closest distance?
+   - Checks in advance
+   - Detects collisions BEFORE they happen
+   - "We're getting close; turn!" ✓
 
-Biz 2. yöntemi kullanacağız (proaktif yaklaşım)
+We will use the second method (a proactive approach).
 """)
 
-input("Devam için ENTER'a basın...\n")
+input("Press ENTER to continue...\n")
 
 # =====================================================
-# BÖLÜM 2: Simülasyon Kurulumu
+# SECTION 2: Simulation Setup
 # =====================================================
 print("="*60)
-print("BÖLÜM 2: Ortamı Hazırlama")
+print("SECTION 2: Preparing the Environment")
 print("="*60)
 
-# Simülasyon başlat
+# Start the simulation
 p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -9.81)
-print("✓ Simülasyon başladı")
+print("✓ Simulation started")
 
-# Zemin
+# Ground
 p.loadURDF("plane.urdf")
 
 # Robot
 robot = p.loadURDF("kuka_iiwa/model.urdf", [0, 0, 0], useFixedBase=True)
-print("✓ Robot yüklendi")
+print("✓ Robot loaded")
 
-# Kamera ayarla
+# Set the camera
 p.resetDebugVisualizerCamera(
     cameraDistance=2.5,
     cameraYaw=45,
@@ -64,25 +64,25 @@ p.resetDebugVisualizerCamera(
     cameraTargetPosition=[0, 0, 0.5]
 )
 
-# Engeller ekleyelim
-print("\n→ Engeller ekleniyor...")
+# Add obstacles
+print("\n→ Adding obstacles...")
 
 engeller = []
 
-# Engel 1: Kırmızı küp
+# Obstacle 1: Red cube
 engel1_collision = p.createCollisionShape(p.GEOM_BOX, halfExtents=[0.1, 0.1, 0.3])
 engel1_visual = p.createVisualShape(p.GEOM_BOX, halfExtents=[0.1, 0.1, 0.3],
                                      rgbaColor=[1, 0, 0, 0.7])
 engel1 = p.createMultiBody(
-    baseMass=0,  # Sabit (hareket etmez)
+    baseMass=0,  # Fixed (does not move)
     baseCollisionShapeIndex=engel1_collision,
     baseVisualShapeIndex=engel1_visual,
     basePosition=[0.4, 0.1, 0.3]
 )
 engeller.append(engel1)
-print(f"  ✓ Engel 1 (Kırmızı küp): [0.4, 0.1, 0.3]")
+print(f"  ✓ Obstacle 1 (Red cube): [0.4, 0.1, 0.3]")
 
-# Engel 2: Mavi küp
+# Obstacle 2: Blue cube
 engel2_collision = p.createCollisionShape(p.GEOM_BOX, halfExtents=[0.15, 0.15, 0.2])
 engel2_visual = p.createVisualShape(p.GEOM_BOX, halfExtents=[0.15, 0.15, 0.2],
                                      rgbaColor=[0, 0, 1, 0.7])
@@ -93,9 +93,9 @@ engel2 = p.createMultiBody(
     basePosition=[0.2, -0.2, 0.2]
 )
 engeller.append(engel2)
-print(f"  ✓ Engel 2 (Mavi küp): [0.2, -0.2, 0.2]")
+print(f"  ✓ Obstacle 2 (Blue cube): [0.2, -0.2, 0.2]")
 
-# Engel 3: Yeşil silindir
+# Obstacle 3: Green cylinder
 engel3_collision = p.createCollisionShape(p.GEOM_CYLINDER, radius=0.08, height=0.4)
 engel3_visual = p.createVisualShape(p.GEOM_CYLINDER, radius=0.08, length=0.4,
                                      rgbaColor=[0, 1, 0, 0.7])
@@ -106,14 +106,14 @@ engel3 = p.createMultiBody(
     basePosition=[0.3, 0.3, 0.2]
 )
 engeller.append(engel3)
-print(f"  ✓ Engel 3 (Yeşil silindir): [0.3, 0.3, 0.2]")
+print(f"  ✓ Obstacle 3 (Green cylinder): [0.3, 0.3, 0.2]")
 
-print(f"\n✓ Toplam {len(engeller)} engel eklendi")
+print(f"\n✓ Added {len(engeller)} obstacles in total")
 
-input("\nDevam için ENTER'a basın...\n")
+input("\nPress ENTER to continue...\n")
 
 # =====================================================
-# YARDIMCI FONKSİYONLAR
+# HELPER FUNCTIONS
 # =====================================================
 def eklem_hareket_ettir(eklem_no, aci):
     p.setJointMotorControl2(
@@ -141,25 +141,25 @@ def marker_goster(x, y, z, renk=[0, 1, 0, 0.8]):
 
 def carpisma_var_mi(guvenlik_mesafesi=0.05):
     """
-    Robot herhangi bir engele çok yakın mı?
+    Is the robot too close to any obstacle?
 
-    Parametreler:
-        guvenlik_mesafesi: Minimum güvenli mesafe (metre)
+    Parameters:
+        guvenlik_mesafesi: Minimum safe distance (meters)
 
-    Döndürür:
-        True: Çarpışma riski var
-        False: Güvenli
+    Returns:
+        True: Collision risk detected
+        False: Safe
     """
     for engel in engeller:
-        # Robot'un tüm linkleriyle engel arasındaki en yakın mesafe
+        # Closest distance between the obstacle and all robot links
         yakin_noktalar = p.getClosestPoints(
             bodyA=robot,
             bodyB=engel,
-            distance=guvenlik_mesafesi  # Bu mesafeden yakınsa raporla
+            distance=guvenlik_mesafesi  # Report if closer than this distance
         )
 
         if len(yakin_noktalar) > 0:
-            # En yakın mesafeyi bul
+            # Find the closest distance
             min_mesafe = min([nokta[8] for nokta in yakin_noktalar])
 
             if min_mesafe < guvenlik_mesafesi:
@@ -168,21 +168,21 @@ def carpisma_var_mi(guvenlik_mesafesi=0.05):
     return False, float('inf')
 
 # =====================================================
-# BÖLÜM 3: TEST - Çarpışma Olmadan Hareket
+# SECTION 3: TEST - Movement Without Collision
 # =====================================================
 print("="*60)
-print("BÖLÜM 3: Güvenli Bölgede Hareket")
+print("SECTION 3: Movement in a Safe Area")
 print("="*60)
 
-print("\n→ Robot güvenli bölgede hareket edecek (engellere uzak)")
+print("\n→ The robot will move in a safe area (away from obstacles)")
 
 guvenli_hedefler = [
-    [0.5, 0.5, 0.6],   # Engellerin dışında
-    [0.6, -0.4, 0.5],  # Engellerin dışında
+    [0.5, 0.5, 0.6],   # Outside the obstacles
+    [0.6, -0.4, 0.5],  # Outside the obstacles
 ]
 
 for idx, hedef in enumerate(guvenli_hedefler, 1):
-    print(f"\n  Hedef {idx}: {hedef}")
+    print(f"\n  Target {idx}: {hedef}")
 
     marker_goster(*hedef, renk=[0, 1, 0, 0.8])
     eklem_acilari = ik_hesapla(*hedef)
@@ -190,39 +190,39 @@ for idx, hedef in enumerate(guvenli_hedefler, 1):
     for i in range(7):
         eklem_hareket_ettir(i, eklem_acilari[i])
 
-    # Hareket ederken çarpışma kontrolü
+    # Check for collisions while moving
     for _ in range(300):
         p.stepSimulation()
         time.sleep(1./240.)
 
         carpti, mesafe = carpisma_var_mi(guvenlik_mesafesi=0.1)
         if carpti:
-            print(f"    ⚠ Engele çok yakın! Mesafe: {mesafe*100:.1f} cm")
+            print(f"    ⚠ Too close to an obstacle! Distance: {mesafe*100:.1f} cm")
 
-    print(f"    ✓ Hedefe ulaşıldı (güvenli)")
+    print(f"    ✓ Target reached (safe)")
 
-input("\nDevam için ENTER'a basın...\n")
+input("\nPress ENTER to continue...\n")
 
 # =====================================================
-# BÖLÜM 4: TEST - Engele Çarpma Denemesi
+# SECTION 4: TEST - Attempting to Hit an Obstacle
 # =====================================================
 print("="*60)
-print("BÖLÜM 4: Tehlikeli Hedef (Çarpışma Riski!)")
+print("SECTION 4: Dangerous Target (Collision Risk!)")
 print("="*60)
 
-tehlikeli_hedef = [0.4, 0.1, 0.3]  # Engel 1'in tam içinde!
-print(f"\n⚠ Tehlikeli hedef: {tehlikeli_hedef}")
-print("  (Bu hedef Engel 1'in içinde!)")
+tehlikeli_hedef = [0.4, 0.1, 0.3]  # Directly inside obstacle 1!
+print(f"\n⚠ Dangerous target: {tehlikeli_hedef}")
+print("  (This target is inside obstacle 1!)")
 
 marker_goster(*tehlikeli_hedef, renk=[1, 0, 0, 0.8])
 
-print("\n→ Robot tehlikeli hedefe gidecek...")
+print("\n→ The robot will move toward the dangerous target...")
 eklem_acilari = ik_hesapla(*tehlikeli_hedef)
 
 for i in range(7):
     eklem_hareket_ettir(i, eklem_acilari[i])
 
-# Hareket sırasında takip et
+# Monitor during movement
 carpti_mi = False
 for adim in range(400):
     p.stepSimulation()
@@ -231,70 +231,70 @@ for adim in range(400):
     carpti, mesafe = carpisma_var_mi(guvenlik_mesafesi=0.1)
 
     if carpti and not carpti_mi:
-        print(f"  ⚠⚠⚠ UYARI: Engele {mesafe*100:.1f} cm yaklaştı!")
+        print(f"  ⚠⚠⚠ WARNING: Approached the obstacle to within {mesafe*100:.1f} cm!")
         carpti_mi = True
 
-    # Her 50 adımda durum raporu
+    # Report the state every 50 steps
     if adim % 50 == 0 and carpti:
-        print(f"    Adım {adim}: Engele mesafe = {mesafe*100:.1f} cm")
+        print(f"    Step {adim}: Distance to obstacle = {mesafe*100:.1f} cm")
 
 if carpti_mi:
-    print("\n  ✗ Çarpışma riski tespit edildi!")
+    print("\n  ✗ Collision risk detected!")
 else:
-    print("\n  ✓ Garip, çarpışma olmadı (engel küçük mü?)")
+    print("\n  ✓ Strange, no collision occurred (is the obstacle too small?)")
 
-input("\nDevam için ENTER'a basın...\n")
+input("\nPress ENTER to continue...\n")
 
 # =====================================================
-# BÖLÜM 5: Basit Kaçınma Stratejisi
+# SECTION 5: Simple Avoidance Strategy
 # =====================================================
 print("="*60)
-print("BÖLÜM 5: Akıllı Kaçınma - Yüksekten Git!")
+print("SECTION 5: Smart Avoidance - Go Overhead!")
 print("="*60)
 
 print("""
-Strateji: Engellerin ÜZERİNDEN geç
-  1. Başlangıç → Yukarı çık (güvenli yükseklik)
-  2. Yukarıda → Hedefe doğru hareket et
-  3. Hedef üstünde → Aşağı in
+Strategy: Pass OVER the obstacles
+  1. Start → Move up (to a safe height)
+  2. At height → Move toward the target
+  3. Above the target → Move down
 """)
 
 baslangic = [0.5, 0.5, 0.5]
-hedef_son = [0.3, -0.3, 0.4]  # Engellerin yakınında
+hedef_son = [0.3, -0.3, 0.4]  # Near the obstacles
 
-guvenli_yukseklik = 0.9  # Engellerin üstünde
+guvenli_yukseklik = 0.9  # Above the obstacles
 
-print(f"\nBaşlangıç: {baslangic}")
-print(f"Hedef    : {hedef_son}")
-print(f"Güvenli yükseklik: {guvenli_yukseklik}m")
+print(f"\nStart: {baslangic}")
+print(f"Target: {hedef_son}")
+print(f"Safe height: {guvenli_yukseklik}m")
 
-# Waypoint'ler oluştur
+# Create waypoints
 waypoints = [
-    np.array(baslangic),                                    # 1. Başlangıç
-    np.array([baslangic[0], baslangic[1], guvenli_yukseklik]),  # 2. Yukarı çık
-    np.array([hedef_son[0], hedef_son[1], guvenli_yukseklik]),  # 3. Hedefin üstüne git
-    np.array(hedef_son)                                     # 4. Aşağı in
+    np.array(baslangic),                                    # 1. Start
+    np.array([baslangic[0], baslangic[1], guvenli_yukseklik]),  # 2. Move up
+    np.array([hedef_son[0], hedef_son[1], guvenli_yukseklik]),  # 3. Move above the target
+    np.array(hedef_son)                                     # 4. Move down
 ]
 
-print("\nWaypoint'ler:")
+print("\nWaypoints:")
 for idx, wp in enumerate(waypoints, 1):
     print(f"  {idx}. {wp}")
 
-# Waypoint'leri göster
+# Display the waypoints
 for wp in waypoints:
     gorsel = p.createVisualShape(p.GEOM_SPHERE, radius=0.04, rgbaColor=[1, 1, 0, 0.9])
     p.createMultiBody(0, baseVisualShapeIndex=gorsel, basePosition=wp.tolist())
 
-print("\n→ Robot waypoint'lerden geçerek güvenli şekilde gidecek...")
+print("\n→ The robot will move safely through the waypoints...")
 
-# Her waypoint'e git
+# Move to each waypoint
 for idx in range(len(waypoints) - 1):
     baslangic_wp = waypoints[idx]
     bitis_wp = waypoints[idx + 1]
 
     print(f"\n  Segment {idx+1}/{len(waypoints)-1}")
 
-    # Cubic interpolation ile yumuşak hareket
+    # Smooth movement using cubic interpolation
     adim_sayisi = 200
     for adim in range(adim_sayisi):
         t = adim / adim_sayisi
@@ -311,37 +311,37 @@ for idx in range(len(waypoints) - 1):
         p.stepSimulation()
         time.sleep(1./240.)
 
-        # Çarpışma kontrolü
+        # Collision check
         carpti, mesafe = carpisma_var_mi(guvenlik_mesafesi=0.15)
         if carpti and adim % 50 == 0:
-            print(f"    ⚠ Engele yakınlık: {mesafe*100:.1f} cm (ama güvenli yükseklikte!)")
+            print(f"    ⚠ Distance to obstacle: {mesafe*100:.1f} cm (but at a safe height!)")
 
-    print(f"    ✓ Waypoint {idx+2}'ye ulaşıldı")
+    print(f"    ✓ Reached waypoint {idx+2}")
 
-print("\n✓ Robot tüm waypoint'lerden geçti!")
-print("✓ Engellerden başarıyla kaçıldı!")
+print("\n✓ The robot passed through all waypoints!")
+print("✓ Successfully avoided the obstacles!")
 
-input("\nDevam için ENTER'a basın...\n")
+input("\nPress ENTER to continue...\n")
 
 # =====================================================
-# BÖLÜM 6: Gelişmiş - Dinamik Kaçınma
+# SECTION 6: Advanced - Dynamic Avoidance
 # =====================================================
 print("="*60)
-print("BÖLÜM 6: Dinamik Kaçınma (Bonus)")
+print("SECTION 6: Dynamic Avoidance (Bonus)")
 print("="*60)
 
 print("""
-Gelişmiş teknik: Gerçek zamanlı kaçınma
-  - Her adımda çarpışma kontrolü
-  - Çok yaklaşırsa yönünü değiştir
+Advanced technique: Real-time avoidance
+  - Check for collisions at every step
+  - Change direction if it gets too close
 
-Bu basit bir demo, gerçek uygulamalar daha karmaşık:
+This is a simple demo; real applications are more complex:
   - RRT (Rapidly-exploring Random Tree)
-  - A* algoritması
-  - Potential Field yöntemleri
+  - A* algorithm
+  - Potential Field methods
 """)
 
-print("\n→ Robot engellere çok yaklaşırsa duracak...")
+print("\n→ The robot will stop if it gets too close to an obstacle...")
 
 hedef_dinamik = [0.35, 0.0, 0.4]
 marker_goster(*hedef_dinamik, renk=[1, 0.5, 0, 0.8])
@@ -355,51 +355,51 @@ for adim in range(500):
     carpti, mesafe = carpisma_var_mi(guvenlik_mesafesi=0.12)
 
     if carpti:
-        if mesafe < 0.08:  # Çok yakın!
-            print(f"\n  🛑 DUR! Engele {mesafe*100:.1f} cm - Çok yakın!")
-            print("     Gerçek uygulamada alternatif yol aranır.")
+        if mesafe < 0.08:  # Too close!
+            print(f"\n  🛑 STOP! {mesafe*100:.1f} cm from the obstacle - too close!")
+            print("     An alternative path would be searched for in a real application.")
             break
         elif adim % 50 == 0:
-            print(f"  ⚠ Dikkat: {mesafe*100:.1f} cm mesafede engel var")
+            print(f"  ⚠ Caution: obstacle at a distance of {mesafe*100:.1f} cm")
 
     p.stepSimulation()
     time.sleep(1./240.)
 
 # =====================================================
-# ÖZET
+# SUMMARY
 # =====================================================
 print("\n" + "="*60)
-print("DERS 8 ÖZET")
+print("LESSON 8 SUMMARY")
 print("="*60)
 print("""
-ÖĞRENDİKLERİMİZ:
-✓ Çarpışma tespiti (getClosestPoints)
-✓ Güvenlik mesafesi kavramı
-✓ Engel oluşturma (collision & visual shapes)
-✓ Basit kaçınma stratejisi (yüksekten geç)
-✓ Waypoint tabanlı güvenli hareket
+WHAT WE LEARNED:
+✓ Collision detection (getClosestPoints)
+✓ The concept of safety distance
+✓ Creating obstacles (collision & visual shapes)
+✓ A simple avoidance strategy (go overhead)
+✓ Safe waypoint-based movement
 
-ÖNEMLİ FONKSİYONLAR:
+IMPORTANT FUNCTIONS:
   p.getClosestPoints(robot, engel, distance)
   p.createCollisionShape(...)
   p.createVisualShape(...)
 
-GERÇEK DÜNYA:
-  - Otonom araçlar
-  - Endüstriyel robotlar (insan yakınında)
-  - Drone'lar
-  - Mobil robotlar (yer temizlik, depo)
+REAL-WORLD APPLICATIONS:
+  - Autonomous vehicles
+  - Industrial robots (near people)
+  - Drones
+  - Mobile robots (floor cleaning, warehouses)
 
-GELİŞMİŞ TEKNİKLER (İleri seviye):
+ADVANCED TECHNIQUES:
   - RRT (Rapidly-exploring Random Tree)
   - A* path planning
   - Potential Fields
   - Dynamic Window Approach
 
-SONRAKI DERS:
-→ İleri seviye IK (Jacobian yöntemi)
-  Veya siz başka bir konu önerebilirsiniz!
+NEXT LESSON:
+→ Advanced IK (Jacobian method)
+  Or you can suggest another topic!
 """)
 
 p.disconnect()
-print("\n✓ PyBullet kapatıldı")
+print("\n✓ PyBullet disconnected")

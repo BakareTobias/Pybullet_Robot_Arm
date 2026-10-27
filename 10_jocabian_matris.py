@@ -1,6 +1,6 @@
 """
-DERS 9: Jacobian Matrisi ve İleri Seviye IK
-Kendi IK algoritmamızı sıfırdan yazacağız!
+LESSON 9: Jacobian Matrix and Advanced IK
+We will build our own IK algorithm from scratch!
 """
 
 import numpy as np
@@ -8,60 +8,60 @@ import matplotlib.pyplot as plt
 import math
 
 print("="*60)
-print("DERS 9: JACOBIAN MATRİSİ VE İLERİ SEVİYE IK")
+print("LESSON 9: JACOBIAN MATRIX AND ADVANCED IK")
 print("="*60)
 
 # =====================================================
-# BÖLÜM 1: Jacobian Nedir?
+# SECTION 1: What Is the Jacobian?
 # =====================================================
-print("\nBÖLÜM 1: Jacobian Matrisi - Temel Kavram")
+print("\nSECTION 1: Jacobian Matrix - Basic Concept")
 print("-"*60)
 print("""
-TANIM:
-Jacobian, bir fonksiyonun türevlerinin matrisidir.
+DEFINITION:
+The Jacobian is a matrix of the derivatives of a function.
 
-Robotlarda:
-  Girdi  : Eklem açıları (θ₁, θ₂, ...)
-  Çıktı  : El pozisyonu (x, y, z)
-  Jacobian: "Açılar biraz değişirse, pozisyon ne kadar değişir?"
+In robotics:
+  Input  : Joint angles (θ₁, θ₂, ...)
+  Output : End-effector position (x, y, z)
+  Jacobian: "If the angles change slightly, how much does the position change?"
 
-MATEMATİK:
+MATHEMATICS:
   Forward Kinematics: f(θ₁, θ₂) = (x, y)
 
   Jacobian J:
     J = [∂x/∂θ₁  ∂x/∂θ₂]
         [∂y/∂θ₁  ∂y/∂θ₂]
 
-  Anlamı:
-    ∂x/∂θ₁ = "θ₁, 1 birim değişirse x ne kadar değişir?"
+  Meaning:
+    ∂x/∂θ₁ = "How much does x change when θ₁ changes by 1 unit?"
 
-KULLANIM:
+USAGE:
   Δp = J × Δθ
 
-  "Pozisyon değişimi = Jacobian × Açı değişimi"
+  "Position change = Jacobian × angle change"
 """)
 
-input("Devam için ENTER'a basın...\n")
+input("Press ENTER to continue...\n")
 
 # =====================================================
-# BÖLÜM 2: 2-Link Robot için Jacobian
+# SECTION 2: Jacobian for a 2-Link Robot
 # =====================================================
 print("="*60)
-print("BÖLÜM 2: 2-Link Robot Örneği")
+print("SECTION 2: 2-Link Robot Example")
 print("="*60)
 
-L1 = 1.0  # Link 1 uzunluğu
-L2 = 0.8  # Link 2 uzunluğu
+L1 = 1.0  # Link 1 length
+L2 = 0.8  # Link 2 length
 
-print(f"\nRobot Parametreleri:")
+print(f"\nRobot Parameters:")
 print(f"  L1 = {L1}m")
 print(f"  L2 = {L2}m")
 
 def forward_kinematics(theta1, theta2):
     """
     Forward Kinematics
-    Girdi: θ₁, θ₂ (radyan)
-    Çıktı: (x, y)
+    Input: θ₁, θ₂ (radians)
+    Output: (x, y)
     """
     x = L1 * math.cos(theta1) + L2 * math.cos(theta1 + theta2)
     y = L1 * math.sin(theta1) + L2 * math.sin(theta1 + theta2)
@@ -69,28 +69,28 @@ def forward_kinematics(theta1, theta2):
 
 def jacobian(theta1, theta2):
     """
-    Jacobian matrisini hesapla
+    Calculate the Jacobian matrix.
 
-    Matematik:
+    Mathematics:
       x = L1*cos(θ₁) + L2*cos(θ₁+θ₂)
       y = L1*sin(θ₁) + L2*sin(θ₁+θ₂)
 
-    Türevler:
+    Derivatives:
       ∂x/∂θ₁ = -L1*sin(θ₁) - L2*sin(θ₁+θ₂)
       ∂x/∂θ₂ = -L2*sin(θ₁+θ₂)
       ∂y/∂θ₁ = L1*cos(θ₁) + L2*cos(θ₁+θ₂)
       ∂y/∂θ₂ = L2*cos(θ₁+θ₂)
 
-    Döndürür:
+    Returns:
       J: 2x2 numpy array
     """
-    # Türevleri hesapla
+    # Calculate the derivatives
     dx_dtheta1 = -L1 * math.sin(theta1) - L2 * math.sin(theta1 + theta2)
     dx_dtheta2 = -L2 * math.sin(theta1 + theta2)
     dy_dtheta1 = L1 * math.cos(theta1) + L2 * math.cos(theta1 + theta2)
     dy_dtheta2 = L2 * math.cos(theta1 + theta2)
 
-    # Jacobian matrisi
+    # Jacobian matrix
     J = np.array([
         [dx_dtheta1, dx_dtheta2],
         [dy_dtheta1, dy_dtheta2]
@@ -99,7 +99,7 @@ def jacobian(theta1, theta2):
     return J
 
 print("\n" + "="*60)
-print("Jacobian Formülü (Elle Türev Aldık):")
+print("Jacobian Formula (Derived by Hand):")
 print("="*60)
 print("""
   J = [∂x/∂θ₁  ∂x/∂θ₂]
@@ -109,203 +109,203 @@ print("""
       [ L1*cos(θ₁) + L2*cos(θ₁+θ₂)     L2*cos(θ₁+θ₂)    ]
 """)
 
-# Örnek hesaplama
-theta1 = math.radians(30)  # 30 derece
-theta2 = math.radians(45)  # 45 derece
+# Example calculation
+theta1 = math.radians(30)  # 30 degrees
+theta2 = math.radians(45)  # 45 degrees
 
 J = jacobian(theta1, theta2)
 
-print(f"\nÖrnek: θ₁={math.degrees(theta1):.0f}°, θ₂={math.degrees(theta2):.0f}°")
-print(f"\nJacobian Matrisi:")
+print(f"\nExample: θ₁={math.degrees(theta1):.0f}°, θ₂={math.degrees(theta2):.0f}°")
+print(f"\nJacobian Matrix:")
 print(f"  J = [{J[0,0]:7.3f}  {J[0,1]:7.3f}]")
 print(f"      [{J[1,0]:7.3f}  {J[1,1]:7.3f}]")
 
-print(f"\nAnlamı:")
-print(f"  θ₁, 1 rad değişirse:")
-print(f"    x → {J[0,0]:.3f}m değişir")
-print(f"    y → {J[1,0]:.3f}m değişir")
-print(f"  θ₂, 1 rad değişirse:")
-print(f"    x → {J[0,1]:.3f}m değişir")
-print(f"    y → {J[1,1]:.3f}m değişir")
+print(f"\nMeaning:")
+print(f"  If θ₁ changes by 1 rad:")
+print(f"    x changes by {J[0,0]:.3f}m")
+print(f"    y changes by {J[1,0]:.3f}m")
+print(f"  If θ₂ changes by 1 rad:")
+print(f"    x changes by {J[0,1]:.3f}m")
+print(f"    y changes by {J[1,1]:.3f}m")
 
-input("\nDevam için ENTER'a basın...\n")
+input("\nPress ENTER to continue...\n")
 
 # =====================================================
-# BÖLÜM 3: Jacobian ile Hız İlişkisi
+# SECTION 3: Velocity Relationship Using the Jacobian
 # =====================================================
 print("="*60)
-print("BÖLÜM 3: Jacobian ile Hız İlişkisi")
+print("SECTION 3: Velocity Relationship Using the Jacobian")
 print("="*60)
 
 print("""
-Jacobian'ın bir diğer kullanımı: HIZ İLİŞKİSİ
+Another use of the Jacobian: VELOCITY RELATIONSHIP
 
-Formül:
+Formula:
   v = J × θ̇
 
-Burada:
-  v = El'in hızı (vx, vy)
-  θ̇ = Eklem açısal hızları (θ̇₁, θ̇₂)
-  J = Jacobian matrisi
+Where:
+  v = End-effector velocity (vx, vy)
+  θ̇ = Joint angular velocities (θ̇₁, θ̇₂)
+  J = Jacobian matrix
 """)
 
-# Örnek
-theta1_dot = 0.5  # rad/s (θ₁'in açısal hızı)
-theta2_dot = 0.3  # rad/s (θ₂'nin açısal hızı)
+# Example
+theta1_dot = 0.5  # rad/s (angular velocity of θ₁)
+theta2_dot = 0.3  # rad/s (angular velocity of θ₂)
 
 theta_dot = np.array([theta1_dot, theta2_dot])
-v = J @ theta_dot  # Matris çarpımı
+v = J @ theta_dot  # Matrix multiplication
 
-print(f"\nÖrnek:")
-print(f"  Eklem hızları: θ̇₁={theta1_dot} rad/s, θ̇₂={theta2_dot} rad/s")
-print(f"  El hızı: vx={v[0]:.3f} m/s, vy={v[1]:.3f} m/s")
+print(f"\nExample:")
+print(f"  Joint velocities: θ̇₁={theta1_dot} rad/s, θ̇₂={theta2_dot} rad/s")
+print(f"  End-effector velocity: vx={v[0]:.3f} m/s, vy={v[1]:.3f} m/s")
 
-input("\nDevam için ENTER'a basın...\n")
+input("\nPress ENTER to continue...\n")
 
 # =====================================================
-# BÖLÜM 4: INVERSE KINEMATICS - Jacobian Yöntemi
+# SECTION 4: INVERSE KINEMATICS - Jacobian Method
 # =====================================================
 print("="*60)
-print("BÖLÜM 4: Jacobian ile Inverse Kinematics")
+print("SECTION 4: Inverse Kinematics Using the Jacobian")
 print("="*60)
 
 print("""
-ŞİMDİ ASIL KONU: IK nasıl çözülür?
+THE MAIN TOPIC: How do we solve IK?
 
 Problem:
-  Hedef pozisyon: (x*, y*)
-  Mevcut pozisyon: (x, y)
-  Gerekli: θ₁, θ₂ değerlerini bul
+  Target position: (x*, y*)
+  Current position: (x, y)
+  Required: Find the values of θ₁, θ₂
 
-ÇÖZÜM: İteratif Yöntem (Adım adım yaklaş)
+SOLUTION: Iterative method (approach step by step)
 
-Algoritma:
-  1. Mevcut açılardan başla: θ₁, θ₂
-  2. Mevcut pozisyonu hesapla: (x, y) = FK(θ₁, θ₂)
-  3. Hata hesapla: e = (x*, y*) - (x, y)
-  4. Jacobian hesapla: J
-  5. Açı değişimini bul: Δθ = J⁻¹ × e
-  6. Açıları güncelle: θ₁ += Δθ₁, θ₂ += Δθ₂
-  7. Hata küçük mü? Evet → Bitti! Hayır → 2'ye git
+Algorithm:
+  1. Start with the current angles: θ₁, θ₂
+  2. Calculate the current position: (x, y) = FK(θ₁, θ₂)
+  3. Calculate the error: e = (x*, y*) - (x, y)
+  4. Calculate the Jacobian: J
+  5. Find the angle change: Δθ = J⁻¹ × e
+  6. Update the angles: θ₁ += Δθ₁, θ₂ += Δθ₂
+  7. Is the error small? Yes → Done! No → Go to 2
 
-Bu yönteme "Jacobian Inverse" veya "Newton-Raphson" denir.
+This method is called "Jacobian Inverse" or "Newton-Raphson".
 """)
 
-input("Devam için ENTER'a basın...\n")
+input("Press ENTER to continue...\n")
 
 def inverse_kinematics_jacobian(target_x, target_y, theta1_init=0, theta2_init=0,
                                 max_iter=100, tolerance=0.001):
     """
-    Jacobian yöntemi ile Inverse Kinematics
+    Inverse kinematics using the Jacobian method.
 
-    Parametreler:
-        target_x, target_y: Hedef pozisyon
-        theta1_init, theta2_init: Başlangıç açıları
-        max_iter: Maksimum iterasyon sayısı
-        tolerance: Hata toleransı (metre)
+    Parameters:
+        target_x, target_y: Target position
+        theta1_init, theta2_init: Initial angles
+        max_iter: Maximum number of iterations
+        tolerance: Error tolerance (meters)
 
-    Döndürür:
-        theta1, theta2: Hesaplanan eklem açıları
-        iterations: Kaç iterasyonda bulundu
-        errors: Her iterasyondaki hata
+    Returns:
+        theta1, theta2: Calculated joint angles
+        iterations: Number of iterations to find the solution
+        errors: Error at each iteration
     """
-    # Başlangıç
+    # Initialize
     theta1 = theta1_init
     theta2 = theta2_init
 
     errors = []
 
     for iteration in range(max_iter):
-        # Mevcut pozisyon
+        # Current position
         x, y = forward_kinematics(theta1, theta2)
 
-        # Hata vektörü
+        # Error vector
         error_x = target_x - x
         error_y = target_y - y
         error = np.array([error_x, error_y])
 
-        # Hata büyüklüğü (Euclidean distance)
+        # Error magnitude (Euclidean distance)
         error_norm = np.linalg.norm(error)
         errors.append(error_norm)
 
-        # Hedefe ulaştık mı?
+        # Have we reached the target?
         if error_norm < tolerance:
             return theta1, theta2, iteration, errors
 
-        # Jacobian hesapla
+        # Calculate the Jacobian
         J = jacobian(theta1, theta2)
 
-        # Jacobian'ın tersini al (pseudo-inverse kullan)
+        # Invert the Jacobian (use the pseudoinverse)
         try:
-            J_inv = np.linalg.pinv(J)  # Pseudo-inverse (daha güvenilir)
+            J_inv = np.linalg.pinv(J)  # Pseudoinverse (more reliable)
         except:
-            print("  ⚠ Jacobian tersi alınamadı (singular matrix)")
+            print("  ⚠ Could not invert the Jacobian (singular matrix)")
             return theta1, theta2, iteration, errors
 
-        # Açı değişimini hesapla
+        # Calculate the angle change
         delta_theta = J_inv @ error
 
-        # Açıları güncelle (öğrenme katsayısı ekle - daha stabil)
-        alpha = 0.5  # Öğrenme katsayısı (0-1 arası)
+        # Update the angles (add a learning rate for greater stability)
+        alpha = 0.5  # Learning rate (between 0 and 1)
         theta1 += alpha * delta_theta[0]
         theta2 += alpha * delta_theta[1]
 
-    # Maksimum iterasyona ulaşıldı
+    # Maximum number of iterations reached
     return theta1, theta2, max_iter, errors
 
 # =====================================================
-# TEST 1: Basit IK Testi
+# TEST 1: Basic IK Test
 # =====================================================
 print("="*60)
-print("TEST 1: Jacobian IK - İlk Deneme")
+print("TEST 1: Jacobian IK - First Attempt")
 print("="*60)
 
 target = (1.2, 0.8)
-print(f"\nHedef pozisyon: ({target[0]}, {target[1]})")
-print(f"Başlangıç açıları: θ₁=0°, θ₂=0°")
+print(f"\nTarget position: ({target[0]}, {target[1]})")
+print(f"Initial angles: θ₁=0°, θ₂=0°")
 
-print("\nÇözüm aranıyor...")
+print("\nSearching for a solution...")
 theta1_sol, theta2_sol, iters, errors = inverse_kinematics_jacobian(
     target[0], target[1],
     theta1_init=0,
     theta2_init=0
 )
 
-print(f"\n✓ Çözüm bulundu!")
-print(f"  İterasyon sayısı: {iters}")
-print(f"  Bulunan açılar:")
+print(f"\n✓ Solution found!")
+print(f"  Number of iterations: {iters}")
+print(f"  Calculated angles:")
 print(f"    θ₁ = {math.degrees(theta1_sol):6.2f}°")
 print(f"    θ₂ = {math.degrees(theta2_sol):6.2f}°")
 
-# Doğrulama
+# Verification
 x_final, y_final = forward_kinematics(theta1_sol, theta2_sol)
-print(f"  Ulaşılan pozisyon: ({x_final:.4f}, {y_final:.4f})")
-print(f"  Hedef pozisyon   : ({target[0]:.4f}, {target[1]:.4f})")
-print(f"  Hata: {np.linalg.norm([target[0]-x_final, target[1]-y_final])*1000:.2f} mm")
+print(f"  Reached position: ({x_final:.4f}, {y_final:.4f})")
+print(f"  Target position : ({target[0]:.4f}, {target[1]:.4f})")
+print(f"  Error: {np.linalg.norm([target[0]-x_final, target[1]-y_final])*1000:.2f} mm")
 
-# Hata grafiği
+# Error plot
 plt.figure(figsize=(10, 6))
 plt.plot(errors, 'b-', linewidth=2)
-plt.xlabel('İterasyon', fontsize=12)
-plt.ylabel('Hata (metre)', fontsize=12)
-plt.title('IK Yakınsama - Hata vs İterasyon', fontsize=14, fontweight='bold')
+plt.xlabel('Iteration', fontsize=12)
+plt.ylabel('Error (meters)', fontsize=12)
+plt.title('IK Convergence - Error vs. Iteration', fontsize=14, fontweight='bold')
 plt.grid(True, alpha=0.3)
-plt.yscale('log')  # Logaritmik ölçek (hata hızla azalır)
+plt.yscale('log')  # Logarithmic scale (error decreases rapidly)
 plt.tight_layout()
 plt.show()
 
-input("\nDevam için ENTER'a basın...\n")
+input("\nPress ENTER to continue...\n")
 
 # =====================================================
-# TEST 2: Farklı Başlangıç Noktaları
+# TEST 2: Different Starting Points
 # =====================================================
 print("="*60)
-print("TEST 2: Farklı Başlangıç Açıları")
+print("TEST 2: Different Initial Angles")
 print("="*60)
 
 print("""
-IK çözümü bazen BAŞLANGIÇ AÇILARINA bağlıdır!
-Aynı hedef, farklı başlangıçlarla farklı çözümlere ulaşabilir.
+The IK solution sometimes depends on the INITIAL ANGLES!
+Different starting points can lead to different solutions for the same target.
 """)
 
 target = (1.0, 1.0)
@@ -315,13 +315,13 @@ baslangiclar = [
     (math.radians(-30), math.radians(60))
 ]
 
-print(f"\nHedef: ({target[0]}, {target[1]})")
-print("\nFarklı başlangıçlar:")
+print(f"\nTarget: ({target[0]}, {target[1]})")
+print("\nDifferent starting points:")
 
 cozumler = []
 
 for idx, (t1_init, t2_init) in enumerate(baslangiclar, 1):
-    print(f"\n{idx}. Başlangıç: θ₁={math.degrees(t1_init):.0f}°, θ₂={math.degrees(t2_init):.0f}°")
+    print(f"\n{idx}. Initial: θ₁={math.degrees(t1_init):.0f}°, θ₂={math.degrees(t2_init):.0f}°")
 
     t1, t2, iters, errs = inverse_kinematics_jacobian(
         target[0], target[1],
@@ -329,51 +329,51 @@ for idx, (t1_init, t2_init) in enumerate(baslangiclar, 1):
         theta2_init=t2_init
     )
 
-    print(f"   Çözüm: θ₁={math.degrees(t1):.1f}°, θ₂={math.degrees(t2):.1f}° ({iters} iterasyon)")
+    print(f"   Solution: θ₁={math.degrees(t1):.1f}°, θ₂={math.degrees(t2):.1f}° ({iters} iterations)")
 
-    # Doğrulama
+    # Verification
     x, y = forward_kinematics(t1, t2)
     hata = np.linalg.norm([target[0]-x, target[1]-y])
-    print(f"   Hata: {hata*1000:.2f} mm")
+    print(f"   Error: {hata*1000:.2f} mm")
 
     cozumler.append((t1, t2, errs))
 
-# Görselleştirme
+# Visualization
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
 
-# Sol: Robot konfigürasyonları
+# Left: Robot configurations
 ax1.set_xlim(-2, 2)
 ax1.set_ylim(-2, 2)
 ax1.set_aspect('equal')
 ax1.grid(True, alpha=0.3)
 ax1.set_xlabel('X (m)', fontsize=12)
 ax1.set_ylabel('Y (m)', fontsize=12)
-ax1.set_title('Farklı Çözümler (Aynı Hedef)', fontsize=14, fontweight='bold')
+ax1.set_title('Different Solutions (Same Target)', fontsize=14, fontweight='bold')
 
 renkler = ['red', 'blue', 'green']
 
 for idx, (t1, t2, _) in enumerate(cozumler):
-    # Robot çiz
+    # Draw the robot
     x0, y0 = 0, 0
     x1 = L1 * math.cos(t1)
     y1 = L1 * math.sin(t1)
     x2, y2 = forward_kinematics(t1, t2)
 
-    ax1.plot([x0, x1], [y0, y1], color=renkler[idx], linewidth=3, label=f'Çözüm {idx+1}')
+    ax1.plot([x0, x1], [y0, y1], color=renkler[idx], linewidth=3, label=f'Solution {idx+1}')
     ax1.plot([x1, x2], [y1, y2], color=renkler[idx], linewidth=3)
     ax1.plot(x2, y2, 'o', color=renkler[idx], markersize=10)
 
-# Hedef
-ax1.plot(target[0], target[1], 'k*', markersize=20, label='Hedef')
+# Target
+ax1.plot(target[0], target[1], 'k*', markersize=20, label='Target')
 ax1.legend(fontsize=10)
 
-# Sağ: Yakınsama grafikleri
+# Right: Convergence plots
 for idx, (_, _, errs) in enumerate(cozumler):
-    ax2.plot(errs, color=renkler[idx], linewidth=2, label=f'Çözüm {idx+1}')
+    ax2.plot(errs, color=renkler[idx], linewidth=2, label=f'Solution {idx+1}')
 
-ax2.set_xlabel('İterasyon', fontsize=12)
-ax2.set_ylabel('Hata (m)', fontsize=12)
-ax2.set_title('Yakınsama Hızları', fontsize=14, fontweight='bold')
+ax2.set_xlabel('Iteration', fontsize=12)
+ax2.set_ylabel('Error (m)', fontsize=12)
+ax2.set_title('Convergence Rates', fontsize=14, fontweight='bold')
 ax2.set_yscale('log')
 ax2.grid(True, alpha=0.3)
 ax2.legend(fontsize=10)
@@ -381,23 +381,23 @@ ax2.legend(fontsize=10)
 plt.tight_layout()
 plt.show()
 
-print("\nGözlem:")
-print("  ✓ Aynı hedefe farklı yollarla ulaşıldı")
-print("  ✓ Her çözüm geçerli (hepsi hedefe ulaşıyor)")
-print("  ✓ Bazı başlangıçlar daha hızlı yakınsıyor")
+print("\nObservation:")
+print("  ✓ The same target was reached via different paths")
+print("  ✓ Every solution is valid (all reach the target)")
+print("  ✓ Some starting points converge faster")
 
-input("\nDevam için ENTER'a basın...\n")
+input("\nPress ENTER to continue...\n")
 
 # =====================================================
-# TEST 3: Ulaşılamayan Hedef
+# TEST 3: Unreachable Target
 # =====================================================
 print("="*60)
-print("TEST 3: Ulaşılamayan Hedef")
+print("TEST 3: Unreachable Target")
 print("="*60)
 
-uzak_hedef = (2.5, 2.5)  # Çok uzak!
-print(f"\nÇok uzak hedef: ({uzak_hedef[0]}, {uzak_hedef[1]})")
-print(f"  (Robot maksimum {L1+L2}m = {L1+L2}m ulaşabilir)")
+uzak_hedef = (2.5, 2.5)  # Very far away!
+print(f"\nVery distant target: ({uzak_hedef[0]}, {uzak_hedef[1]})")
+print(f"  (The robot can reach a maximum of {L1+L2}m = {L1+L2}m)")
 
 t1, t2, iters, errs = inverse_kinematics_jacobian(
     uzak_hedef[0], uzak_hedef[1],
@@ -407,75 +407,75 @@ t1, t2, iters, errs = inverse_kinematics_jacobian(
 x_final, y_final = forward_kinematics(t1, t2)
 mesafe = np.sqrt(x_final**2 + y_final**2)
 
-print(f"\n✓ Algoritma durdu (maksimum iterasyon)")
-print(f"  En yakın pozisyon: ({x_final:.3f}, {y_final:.3f})")
-print(f"  Hedef: ({uzak_hedef[0]}, {uzak_hedef[1]})")
-print(f"  Ulaşılan mesafe: {mesafe:.3f}m")
-print(f"  Hata: {errs[-1]:.3f}m = {errs[-1]*100:.1f}cm")
-print("\n  Robot mümkün olan en yakın noktaya gitti!")
+print(f"\n✓ Algorithm stopped (maximum iterations)")
+print(f"  Nearest position: ({x_final:.3f}, {y_final:.3f})")
+print(f"  Target: ({uzak_hedef[0]}, {uzak_hedef[1]})")
+print(f"  Reached distance: {mesafe:.3f}m")
+print(f"  Error: {errs[-1]:.3f}m = {errs[-1]*100:.1f}cm")
+print("\n  The robot moved to the nearest point possible!")
 
 # =====================================================
-# ÖZET
+# SUMMARY
 # =====================================================
 print("\n" + "="*60)
-print("DERS 9 ÖZET")
+print("LESSON 9 SUMMARY")
 print("="*60)
 print("""
-ÖĞRENDİKLERİMİZ:
-✓ Jacobian matrisi nedir
-✓ Jacobian nasıl hesaplanır (türev)
-✓ Jacobian ile hız ilişkisi
-✓ Jacobian Inverse IK algoritması
-✓ İteratif çözüm yöntemi
-✓ Farklı başlangıç noktaları farklı çözümler verir
+WHAT WE LEARNED:
+✓ What the Jacobian matrix is
+✓ How to calculate the Jacobian (derivatives)
+✓ The relationship between the Jacobian and velocity
+✓ The Jacobian Inverse IK algorithm
+✓ The iterative solution method
+✓ Different starting points produce different solutions
 
-JACOBIAN FORMÜLÜ (2-Link):
+JACOBIAN FORMULA (2-Link):
   J = [∂x/∂θ₁  ∂x/∂θ₂]
       [∂y/∂θ₁  ∂y/∂θ₂]
 
-IK ALGORİTMASI:
-  1. Başlangıç açıları
-  2. FK ile pozisyon hesapla
-  3. Hata = Hedef - Mevcut
-  4. Δθ = J⁻¹ × Hata
-  5. θ'yi güncelle
-  6. Tekrarla (hata < tolerans olana kadar)
+IK ALGORITHM:
+  1. Initial angles
+  2. Calculate the position using FK
+  3. Error = Target - Current
+  4. Δθ = J⁻¹ × Error
+  5. Update θ
+  6. Repeat (until error < tolerance)
 
-AVANTAJLAR:
-  ✓ Genel (her robot için)
-  ✓ Gerçek zamanlı
-  ✓ Kısmi hareketler (velocity control)
+ADVANTAGES:
+  ✓ General (for any robot)
+  ✓ Real-time
+  ✓ Partial movements (velocity control)
 
-DEZAVANTAJLAR:
-  ✗ Singularity'lerde problem (J tersi alınamaz)
-  ✗ Local minimum'a takılabilir
-  ✗ Başlangıç açılarına hassas
+DISADVANTAGES:
+  ✗ Problems at singularities (J cannot be inverted)
+  ✗ Can get stuck at a local minimum
+  ✗ Sensitive to initial angles
 
-İLERİ OKUMA:
-  - Damped Least Squares (DLS) - Singularity çözümü
-  - Weighted Jacobian - Eklem limitleri
-  - Task Priority - Çoklu hedef
+FURTHER READING:
+  - Damped Least Squares (DLS) - Singularity resolution
+  - Weighted Jacobian - Joint limits
+  - Task Priority - Multiple targets
 """)
 
 print("\n" + "="*60)
-print("ROBOT YAZILIM EĞİTİMİ TAMAMLANDI!")
+print("ROBOTICS SOFTWARE TRAINING COMPLETE!")
 print("="*60)
 print("""
-🎉 TEBRİKLER! Şunları öğrendiniz:
+🎉 CONGRATULATIONS! You have learned:
 
-1. ✅ PyBullet ile simülasyon
-2. ✅ Forward Kinematics (açı → pozisyon)
-3. ✅ Inverse Kinematics (pozisyon → açı)
-4. ✅ Trajectory Planning (yumuşak hareket)
-5. ✅ Collision Avoidance (engel kaçınma)
-6. ✅ Jacobian matrisi (matematik)
-7. ✅ İleri seviye IK algoritması
+1. ✅ Simulation with PyBullet
+2. ✅ Forward Kinematics (angle → position)
+3. ✅ Inverse Kinematics (position → angle)
+4. ✅ Trajectory Planning (smooth movement)
+5. ✅ Collision Avoidance (obstacle avoidance)
+6. ✅ The Jacobian matrix (mathematics)
+7. ✅ An advanced IK algorithm
 
-SONRAKI ADIMLAR:
-  → ROS 2 öğrenin (gerçek robotlar)
-  → Gerçek robot kol edinin (UR5, Kuka, veya DIY)
-  → Computer Vision ekleyin (kamera + robot)
-  → Machine Learning (pekiştirmeli öğrenme)
+NEXT STEPS:
+  → Learn ROS 2 (real robots)
+  → Get a real robot arm (UR5, Kuka, or DIY)
+  → Add Computer Vision (camera + robot)
+  → Machine Learning (reinforcement learning)
 
-Başarılar! 🚀🤖
+Good luck! 🚀🤖
 """)

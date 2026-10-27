@@ -1,6 +1,6 @@
 """
-DERS 4: Inverse Kinematics (Ters Kinematik)
-Hedef pozisyondan eklem açılarını hesaplama
+LESSON 4: Inverse Kinematics
+Calculating joint angles from a target position
 """
 
 import pybullet as p
@@ -9,12 +9,12 @@ import time
 import math
 import numpy as np
 
-# Simülasyonu başlat
+# Start the simulation
 p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -9.81)
 
-# Kamerayı ayarla
+# Set the camera
 p.resetDebugVisualizerCamera(
     cameraDistance=2.0,
     cameraYaw=50,
@@ -22,17 +22,17 @@ p.resetDebugVisualizerCamera(
     cameraTargetPosition=[0, 0, 0.5]
 )
 
-print("✓ Simülasyon başladı")
+print("✓ Simulation started")
 
-# Robot yükle
+# Load the robot
 robot = p.loadURDF("kuka_iiwa/model.urdf", [0, 0, 0], useFixedBase=True)
-print("✓ Robot yüklendi\n")
+print("✓ Robot loaded\n")
 
 # =====================================================
-# YARDIMCI FONKSİYONLAR
+# HELPER FUNCTIONS
 # =====================================================
 def eklem_hareket_ettir(eklem_no, aci, max_force=200, max_velocity=1.0):
-    """Bir eklemi belirtilen açıya götürür"""
+    """Move a joint to the specified angle."""
     p.setJointMotorControl2(
         bodyUniqueId=robot,
         jointIndex=eklem_no,
@@ -45,27 +45,27 @@ def eklem_hareket_ettir(eklem_no, aci, max_force=200, max_velocity=1.0):
     )
 
 def eklem_durumunu_oku(eklem_no):
-    """Eklemin durumunu okur"""
+    """Read the joint state."""
     durum = p.getJointState(robot, eklem_no)
-    return durum[0]  # Açı
+    return durum[0]  # Angle
 
 def end_effector_pozisyonu():
-    """End-effector'ın pozisyonunu döndürür"""
-    # Kuka IIWA'da son link (end-effector) genellikle link 6 veya 7
+    """Return the end-effector position."""
+    # The last link (end-effector) in Kuka IIWA is usually link 6 or 7
     num_links = p.getNumJoints(robot)
-    end_effector_link = num_links - 1  # Son link
+    end_effector_link = num_links - 1  # Last link
     
     link_state = p.getLinkState(robot, end_effector_link)
-    return link_state[0]  # (x, y, z) pozisyon
+    return link_state[0]  # (x, y, z) position
 
 def simule_et(adim_sayisi):
-    """Simülasyonu çalıştır"""
+    """Run the simulation."""
     for i in range(adim_sayisi):
         p.stepSimulation()
         time.sleep(1./240.)
 
 def marker_olustur(x, y, z, renk=[1, 0, 0, 0.7]):
-    """Hedef pozisyonu görselleştirmek için marker oluştur"""
+    """Create a marker to visualize the target position."""
     visual_shape = p.createVisualShape(
         shapeType=p.GEOM_SPHERE,
         radius=0.05,
@@ -79,45 +79,45 @@ def marker_olustur(x, y, z, renk=[1, 0, 0, 0.7]):
     return marker
 
 # =====================================================
-# INVERSE KINEMATICS FONKSİYONU
+# INVERSE KINEMATICS FUNCTION
 # =====================================================
 def inverse_kinematics(hedef_pozisyon, hedef_orientasyon=None):
     """
-    Hedef pozisyona ulaşmak için gerekli eklem açılarını hesaplar
+    Calculate the joint angles required to reach the target position.
     
     Args:
-        hedef_pozisyon: (x, y, z) hedef pozisyon
-        hedef_orientasyon: (x, y, z, w) quaternion (opsiyonel)
+        hedef_pozisyon: (x, y, z) target position
+        hedef_orientasyon: (x, y, z, w) quaternion (optional)
     
     Returns:
-        eklem_acilari: List of joint angles (radyan)
+        eklem_acilari: List of joint angles (radians)
     """
     num_joints = p.getNumJoints(robot)
     end_effector_link = num_joints - 1
     
-    # PyBullet'in built-in IK çözücüsünü kullan
+    # Use PyBullet's built-in IK solver
     if hedef_orientasyon is None:
-        # Sadece pozisyon hedefi (orientasyon önemli değil)
-        hedef_orientasyon = [0, 0, 0, 1]  # Varsayılan quaternion
+        # Position target only (orientation does not matter)
+        hedef_orientasyon = [0, 0, 0, 1]  # Default quaternion
     
-    # IK çözücü parametreleri
+    # IK solver parameters
     ik_solver = 0  # 0 = ikSolver, 1 = ikSolverPosOnly
     max_iterations = 20
     residual_threshold = 0.01
     
-    # Hareketli eklemleri bul
+    # Find movable joints
     movable_joints = []
     for i in range(num_joints):
         info = p.getJointInfo(robot, i)
         if info[2] == p.JOINT_REVOLUTE:
             movable_joints.append(i)
     
-    # Mevcut eklem pozisyonlarını al (başlangıç değerleri)
+    # Get the current joint positions (initial values)
     current_positions = []
     for joint_idx in movable_joints:
         current_positions.append(eklem_durumunu_oku(joint_idx))
     
-    # IK hesapla
+    # Calculate IK
     ik_result = p.calculateInverseKinematics(
         bodyUniqueId=robot,
         endEffectorLinkIndex=end_effector_link,
@@ -134,25 +134,25 @@ def inverse_kinematics(hedef_pozisyon, hedef_orientasyon=None):
     return list(ik_result)
 
 # =====================================================
-# TEST 1: Basit IK - Tek Hedef Pozisyon
+# TEST 1: Basic IK - Single Target Position
 # =====================================================
 print("="*60)
-print("TEST 1: Basit Inverse Kinematics")
+print("TEST 1: Basic Inverse Kinematics")
 print("="*60)
 
-# Hedef pozisyon
+# Target position
 hedef_x, hedef_y, hedef_z = 0.4, 0.3, 0.6
-print(f"\nHedef pozisyon: ({hedef_x:.2f}, {hedef_y:.2f}, {hedef_z:.2f})")
+print(f"\nTarget position: ({hedef_x:.2f}, {hedef_y:.2f}, {hedef_z:.2f})")
 
-# Marker oluştur
+ # Create a marker
 marker = marker_olustur(hedef_x, hedef_y, hedef_z, [1, 0, 0, 0.7])
-print("✓ Kırmızı marker hedef pozisyonu gösteriyor")
+print("✓ The red marker shows the target position")
 
-# IK hesapla
-print("\nInverse Kinematics hesaplanıyor...")
+# Calculate IK
+print("\nCalculating Inverse Kinematics...")
 eklem_acilari = inverse_kinematics([hedef_x, hedef_y, hedef_z])
 
-# Hareketli eklemleri bul
+# Find movable joints
 num_joints = p.getNumJoints(robot)
 movable_joints = []
 for i in range(num_joints):
@@ -160,20 +160,20 @@ for i in range(num_joints):
     if info[2] == p.JOINT_REVOLUTE:
         movable_joints.append(i)
 
-# Eklemleri hesaplanan açılara götür
-print(f"\nHesaplanan eklem açıları:")
-for idx, joint_idx in enumerate(movable_joints[:7]):  # İlk 7 eklem
+# Move the joints to the calculated angles
+print(f"\nCalculated joint angles:")
+for idx, joint_idx in enumerate(movable_joints[:7]):  # First 7 joints
     aci = eklem_acilari[idx]
     info = p.getJointInfo(robot, joint_idx)
     eklem_adi = info[1].decode('utf-8')
-    print(f"  Eklem {joint_idx} ({eklem_adi}): {math.degrees(aci):.2f}°")
+    print(f"  Joint {joint_idx} ({eklem_adi}): {math.degrees(aci):.2f}°")
     eklem_hareket_ettir(joint_idx, aci)
 
-# Hareketi bekle
-print("\nRobot hedefe hareket ediyor...")
+# Wait for the movement
+print("\nRobot moving to the target...")
 simule_et(500)
 
-# Sonuçları kontrol et
+# Check the results
 gercek_pozisyon = end_effector_pozisyonu()
 mesafe = math.sqrt(
     (gercek_pozisyon[0] - hedef_x)**2 +
@@ -181,47 +181,47 @@ mesafe = math.sqrt(
     (gercek_pozisyon[2] - hedef_z)**2
 )
 
-print(f"\n✓ Hareket tamamlandı!")
-print(f"  Hedef pozisyon: ({hedef_x:.3f}, {hedef_y:.3f}, {hedef_z:.3f})")
-print(f"  Gerçek pozisyon: ({gercek_pozisyon[0]:.3f}, {gercek_pozisyon[1]:.3f}, {gercek_pozisyon[2]:.3f})")
-print(f"  Mesafe hatası: {mesafe*1000:.2f} mm")
+print(f"\n✓ Movement complete!")
+print(f"  Target position: ({hedef_x:.3f}, {hedef_y:.3f}, {hedef_z:.3f})")
+print(f"  Actual position: ({gercek_pozisyon[0]:.3f}, {gercek_pozisyon[1]:.3f}, {gercek_pozisyon[2]:.3f})")
+print(f"  Distance error: {mesafe*1000:.2f} mm")
 
-input("\nDevam için ENTER'a basın...")
+input("\nPress ENTER to continue...")
 
 # =====================================================
-# TEST 2: Birden Fazla Hedef Pozisyon
+# TEST 2: Multiple Target Positions
 # =====================================================
 print("\n" + "="*60)
-print("TEST 2: Birden Fazla Hedef Pozisyon")
+print("TEST 2: Multiple Target Positions")
 print("="*60)
 
-# Farklı renklerde markerlar
+# Markers in different colors
 hedefler = [
-    ([0.5, 0.2, 0.5], [1, 0, 0, 0.7]),  # Kırmızı
-    ([0.3, 0.4, 0.6], [0, 1, 0, 0.7]),  # Yeşil
-    ([0.4, -0.3, 0.5], [0, 0, 1, 0.7]),  # Mavi
-    ([0.2, 0.0, 0.7], [1, 1, 0, 0.7]),  # Sarı
+    ([0.5, 0.2, 0.5], [1, 0, 0, 0.7]),  # Red
+    ([0.3, 0.4, 0.6], [0, 1, 0, 0.7]),  # Green
+    ([0.4, -0.3, 0.5], [0, 0, 1, 0.7]),  # Blue
+    ([0.2, 0.0, 0.7], [1, 1, 0, 0.7]),  # Yellow
 ]
 
-print(f"\n{len(hedefler)} farklı hedef pozisyon test edilecek\n")
+print(f"\n{len(hedefler)} different target positions will be tested\n")
 
 for i, (hedef_pos, renk) in enumerate(hedefler):
-    print(f"[Hedef {i+1}] Pozisyon: ({hedef_pos[0]:.2f}, {hedef_pos[1]:.2f}, {hedef_pos[2]:.2f})")
+    print(f"[Target {i+1}] Position: ({hedef_pos[0]:.2f}, {hedef_pos[1]:.2f}, {hedef_pos[2]:.2f})")
     
-    # Marker oluştur
+    # Create a marker
     marker = marker_olustur(hedef_pos[0], hedef_pos[1], hedef_pos[2], renk)
     
-    # IK hesapla
+    # Calculate IK
     eklem_acilari = inverse_kinematics(hedef_pos)
     
-    # Eklemleri hareket ettir
+    # Move the joints
     for idx, joint_idx in enumerate(movable_joints[:7]):
         eklem_hareket_ettir(joint_idx, eklem_acilari[idx])
     
-    # Hareketi bekle
+    # Wait for the movement
     simule_et(400)
     
-    # Sonuç kontrolü
+    # Check the result
     gercek_pos = end_effector_pozisyonu()
     mesafe = math.sqrt(
         (gercek_pos[0] - hedef_pos[0])**2 +
@@ -229,31 +229,31 @@ for i, (hedef_pos, renk) in enumerate(hedefler):
         (gercek_pos[2] - hedef_pos[2])**2
     )
     
-    print(f"  → Gerçek: ({gercek_pos[0]:.3f}, {gercek_pos[1]:.3f}, {gercek_pos[2]:.3f})")
-    print(f"  → Hata: {mesafe*1000:.2f} mm\n")
+    print(f"  → Actual: ({gercek_pos[0]:.3f}, {gercek_pos[1]:.3f}, {gercek_pos[2]:.3f})")
+    print(f"  → Error: {mesafe*1000:.2f} mm\n")
     
-    time.sleep(0.5)  # Kısa bekleme
+    time.sleep(0.5)  # Brief pause
 
-input("\nDevam için ENTER'a basın...")
+input("\nPress ENTER to continue...")
 
 # =====================================================
-# TEST 3: Trajectory Following (Yörünge Takibi)
+# TEST 3: Trajectory Following
 # =====================================================
 print("\n" + "="*60)
-print("TEST 3: Yörünge Takibi (Trajectory Following)")
+print("TEST 3: Trajectory Following")
 print("="*60)
-print("Robot bir daire çizecek\n")
+print("The robot will draw a circle\n")
 
-# Daire parametreleri
+# Circle parameters
 merkez = [0.4, 0.0, 0.6]
 yaricap = 0.15
 nokta_sayisi = 20
 
-print(f"Daire merkezi: {merkez}")
-print(f"Yarıçap: {yaricap}m")
-print(f"Nokta sayısı: {nokta_sayisi}\n")
+print(f"Circle center: {merkez}")
+print(f"Radius: {yaricap}m")
+print(f"Number of points: {nokta_sayisi}\n")
 
-# Daire üzerindeki noktaları hesapla
+# Calculate the points on the circle
 noktalar = []
 for i in range(nokta_sayisi):
     aci = 2 * math.pi * i / nokta_sayisi
@@ -262,53 +262,53 @@ for i in range(nokta_sayisi):
     z = merkez[2]
     noktalar.append([x, y, z])
 
-print("Robot daireyi çiziyor...")
+print("The robot is drawing the circle...")
 for i, nokta in enumerate(noktalar):
-    # IK hesapla
+    # Calculate IK
     eklem_acilari = inverse_kinematics(nokta)
     
-    # Eklemleri hareket ettir
+    # Move the joints
     for idx, joint_idx in enumerate(movable_joints[:7]):
         eklem_hareket_ettir(joint_idx, eklem_acilari[idx])
     
-    # Her noktada kısa simülasyon
+    # Run a short simulation at each point
     simule_et(50)
     
-    # İlerlemeyi göster
+    # Show progress
     if i % 5 == 0:
         gercek_pos = end_effector_pozisyonu()
-        print(f"  Nokta {i+1}/{nokta_sayisi}: "
+        print(f"  Point {i+1}/{nokta_sayisi}: "
               f"({gercek_pos[0]:.3f}, {gercek_pos[1]:.3f}, {gercek_pos[2]:.3f})")
 
-print("\n✓ Yörünge takibi tamamlandı!")
+print("\n✓ Trajectory following complete!")
 
-input("\nDevam için ENTER'a basın...")
+input("\nPress ENTER to continue...")
 
 # =====================================================
-# TEST 4: Gerçek Zamanlı IK Takibi
+# TEST 4: Real-Time IK Tracking
 # =====================================================
 print("\n" + "="*60)
-print("TEST 4: Gerçek Zamanlı IK Takibi")
+print("TEST 4: Real-Time IK Tracking")
 print("="*60)
-print("10 saniye boyunca robot hareketli hedefi takip edecek\n")
+print("The robot will track a moving target for 10 seconds\n")
 
 baslangic = time.time()
 t = 0
 
 while time.time() - baslangic < 10:
-    # Hareketli hedef (sinüzoidal)
+    # Moving target (sinusoidal)
     hedef_x = 0.4 + 0.1 * math.sin(t)
     hedef_y = 0.0 + 0.15 * math.cos(t * 0.8)
     hedef_z = 0.6 + 0.05 * math.sin(t * 1.2)
     
-    # IK hesapla
+    # Calculate IK
     eklem_acilari = inverse_kinematics([hedef_x, hedef_y, hedef_z])
     
-    # Eklemleri hareket ettir
+    # Move the joints
     for idx, joint_idx in enumerate(movable_joints[:7]):
         eklem_hareket_ettir(joint_idx, eklem_acilari[idx])
     
-    # Gerçek pozisyonu oku
+    # Read the actual position
     gercek_pos = end_effector_pozisyonu()
     mesafe = math.sqrt(
         (gercek_pos[0] - hedef_x)**2 +
@@ -316,32 +316,31 @@ while time.time() - baslangic < 10:
         (gercek_pos[2] - hedef_z)**2
     )
     
-    # Ekrana yazdır
-    print(f"\rHedef: ({hedef_x:.3f}, {hedef_y:.3f}, {hedef_z:.3f}) | "
-          f"Gerçek: ({gercek_pos[0]:.3f}, {gercek_pos[1]:.3f}, {gercek_pos[2]:.3f}) | "
-          f"Hata: {mesafe*1000:.1f}mm | "
-          f"Süre: {time.time()-baslangic:.1f}s", end="")
+    # Print to the screen
+    print(f"\rTarget: ({hedef_x:.3f}, {hedef_y:.3f}, {hedef_z:.3f}) | "
+          f"Actual: ({gercek_pos[0]:.3f}, {gercek_pos[1]:.3f}, {gercek_pos[2]:.3f}) | "
+          f"Error: {mesafe*1000:.1f}mm | "
+          f"Time: {time.time()-baslangic:.1f}s", end="")
     
     p.stepSimulation()
     time.sleep(1./240.)
     t += 0.02
 
-print("\n\n✓ Gerçek zamanlı takip tamamlandı!")
+print("\n\n✓ Real-time tracking complete!")
 
 # =====================================================
-# ÖZET
+# SUMMARY
 # =====================================================
 print("\n" + "="*60)
-print("DERS 4 ÖZET: Inverse Kinematics")
+print("LESSON 4 SUMMARY: Inverse Kinematics")
 print("="*60)
-print("✓ PyBullet'in IK çözücüsünü kullandık")
-print("✓ Hedef pozisyondan eklem açılarını hesapladık")
-print("✓ Birden fazla hedef pozisyonu test ettik")
-print("✓ Yörünge takibi yaptık")
-print("✓ Gerçek zamanlı hedef takibi yaptık")
-print("\nSonraki ders: Collision Detection (Çarpışma Tespiti)")
+print("✓ Used PyBullet's IK solver")
+print("✓ Calculated joint angles from the target position")
+print("✓ Tested multiple target positions")
+print("✓ Performed trajectory tracking")
+print("✓ Performed real-time target tracking")
+print("\nNext lesson: Collision Detection")
 print("="*60)
 
 p.disconnect()
-print("\n✓ Simülasyon kapatıldı")
-
+print("\n✓ Simulation closed")

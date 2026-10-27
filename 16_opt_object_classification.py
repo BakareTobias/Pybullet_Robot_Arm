@@ -1,6 +1,6 @@
 """
-PROJE 1: OPTIMIZE EDİLMİŞ VERSİYON
-Performans: %35 daha hızlı!
+PROJECT 1: OPTIMIZED VERSION
+Performance: 35% faster!
 """
 
 import pybullet as p
@@ -11,29 +11,29 @@ import numpy as np
 import random
 
 print("="*70)
-print("PROJE 1: OPTİMİZE EDİLMİŞ RENK SINIFLANDIRMA")
+print("PROJECT 1: OPTIMIZED COLOR CLASSIFICATION")
 print("="*70)
 
 # =====================================================
-# OPTİMİZASYON 1: Simülasyon Ayarları
+# OPTIMIZATION 1: Simulation Settings
 # =====================================================
-print("\n[OPTİMİZASYON 1] Simülasyon hızı artırılıyor...")
+print("\n[OPTIMIZATION 1] Increasing simulation speed...")
 
 p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -9.81)
 
-# YENI: Fizik adım sayısını azalt (hızlı ama yeterince hassas)
-p.setTimeStep(1./180.)  # Varsayılan 1/240 yerine 1/180
-print("  ✓ Fizik adım aralığı: 1/180 saniye (varsayılan: 1/240)")
+# NEW: Reduce the physics step count (fast but accurate enough)
+p.setTimeStep(1./180.)  # 1/180 instead of the default 1/240
+print("  ✓ Physics time step: 1/180 seconds (default: 1/240)")
 
-# YENI: Gereksiz çarpışma kontrollerini azalt
-p.setPhysicsEngineParameter(numSolverIterations=50)  # Varsayılan 150
-print("  ✓ Solver iterasyonları: 50 (varsayılan: 150)")
+# NEW: Reduce unnecessary collision checks
+p.setPhysicsEngineParameter(numSolverIterations=50)  # Default: 150
+print("  ✓ Solver iterations: 50 (default: 150)")
 
 p.loadURDF("plane.urdf")
 
-# Masa ve kutular (değişmedi)
+# Table and bins (unchanged)
 masa_collision = p.createCollisionShape(p.GEOM_BOX, halfExtents=[0.5, 0.4, 0.15])
 masa_visual = p.createVisualShape(p.GEOM_BOX, halfExtents=[0.5, 0.4, 0.15],
                                    rgbaColor=[0.6, 0.4, 0.2, 1])
@@ -81,12 +81,12 @@ p.resetDebugVisualizerCamera(
     cameraTargetPosition=[0.5, 0, 0.4]
 )
 
-print("✓ Ortam hazır")
+print("✓ Environment ready")
 
 # =====================================================
-# OPTİMİZASYON 2: IK Önbellek (Cache)
+# OPTIMIZATION 2: IK Cache
 # =====================================================
-print("\n[OPTİMİZASYON 2] IK önbellek sistemi aktif...")
+print("\n[OPTIMIZATION 2] IK caching system active...")
 
 kol_eklemleri = [0, 1, 2, 3, 4, 5, 6]
 gripper_eklemleri = [9, 10]
@@ -99,12 +99,12 @@ for i, angle in enumerate(home_angles):
 for eklem in gripper_eklemleri:
     p.resetJointState(panda, eklem, 0.04)
 
-# YENI: IK sonuçlarını önbelleğe al
+# NEW: Cache IK results
 ik_cache = {}
 
 def ik_hesapla_cached(hedef_pos):
-    """IK hesaplama - önbellekli"""
-    # Pozisyonu yuvarla (cache key için)
+    """Calculate IK with caching"""
+    # Round the position (for the cache key)
     key = (round(hedef_pos[0], 2), round(hedef_pos[1], 2), round(hedef_pos[2], 2))
 
     if key in ik_cache:
@@ -113,8 +113,8 @@ def ik_hesapla_cached(hedef_pos):
     hedef_orn = p.getQuaternionFromEuler([math.pi, 0, 0])
     ik_result = p.calculateInverseKinematics(
         panda, end_effector_index, hedef_pos, hedef_orn,
-        maxNumIterations=50,  # 100 yerine 50 (daha hızlı)
-        residualThreshold=0.005  # 0.001 yerine 0.005 (biraz daha toleranslı)
+        maxNumIterations=50,  # 50 instead of 100 (faster)
+        residualThreshold=0.005  # 0.005 instead of 0.001 (slightly more tolerant)
     )
 
     hedef_acilari = [ik_result[i] for i in kol_eklemleri]
@@ -122,40 +122,40 @@ def ik_hesapla_cached(hedef_pos):
 
     return hedef_acilari
 
-print(f"  ✓ IK önbellek hazır")
+print(f"  ✓ IK cache ready")
 
 # =====================================================
-# OPTİMİZASYON 3: Hızlandırılmış Hareket
+# OPTIMIZATION 3: Accelerated Movement
 # =====================================================
-print("\n[OPTİMİZASYON 3] Hareket hızı optimize ediliyor...")
+print("\n[OPTIMIZATION 3] Optimizing movement speed...")
 
-# YENI: Gerçek zamanlı simülasyon kapatılabilir (görsel gereksizse)
-GERCEK_ZAMANLI = True  # False yaparsanız görsel yok ama ÇOK HIZLI!
+# NEW: Real-time simulation can be disabled (if visuals are unnecessary)
+GERCEK_ZAMANLI = True  # Set to False for no visuals but MUCH FASTER execution!
 
 def kol_hareket_ettir_hizli(hedef_pos, sure=1.5):
-    """Optimize edilmiş hareket"""
+    """Optimized movement"""
     hedef_acilari = ik_hesapla_cached(hedef_pos)
 
-    adim_sayisi = int(sure * 180)  # 240 yerine 180 (daha az adım)
+    adim_sayisi = int(sure * 180)  # 180 instead of 240 (fewer steps)
 
     for _ in range(adim_sayisi):
         for i, eklem_idx in enumerate(kol_eklemleri):
             p.setJointMotorControl2(
                 panda, eklem_idx, p.POSITION_CONTROL,
                 targetPosition=hedef_acilari[i],
-                force=100,  # 87 yerine 100 (daha hızlı hareket)
-                maxVelocity=1.5  # 1.0 yerine 1.5 (daha hızlı)
+                force=100,  # 100 instead of 87 (faster movement)
+                maxVelocity=1.5  # 1.5 instead of 1.0 (faster)
             )
 
         p.stepSimulation()
 
         if GERCEK_ZAMANLI:
-            time.sleep(1./180.)  # Görsel için bekle
-        # else: Görsel istemiyorsak bekleme!
+            time.sleep(1./180.)  # Wait for the visuals
+        # Otherwise, do not wait if visuals are not needed.
 
 def gripper_kontrol_hizli(komut, kuvvet=100):
-    """Optimize edilmiş gripper"""
-    hedef = 0.04 if komut == "ac" else 0.0
+    """Optimized gripper"""
+    hedef = 0.04 if komut == "open" else 0.0
 
     for eklem in gripper_eklemleri:
         p.setJointMotorControl2(
@@ -163,27 +163,27 @@ def gripper_kontrol_hizli(komut, kuvvet=100):
             targetPosition=hedef, force=kuvvet
         )
 
-    # YENI: Daha az bekleme
-    for _ in range(50):  # 80 yerine 50
+    # NEW: Wait less
+    for _ in range(50):  # 50 instead of 80
         p.stepSimulation()
         if GERCEK_ZAMANLI:
             time.sleep(1./180.)
 
-print("  ✓ Hareket parametreleri: Hız +50%, Adım -25%")
+print("  ✓ Movement parameters: Speed +50%, Steps -25%")
 
 # =====================================================
-# OPTİMİZASYON 4: Yörünge Optimizasyonu
+# OPTIMIZATION 4: Trajectory Optimization
 # =====================================================
-print("\n[OPTİMİZASYON 4] Akıllı yörünge planlama...")
+print("\n[OPTIMIZATION 4] Smart trajectory planning...")
 
-# YENI: En yakın küpten başla (daha kısa yol)
+# NEW: Start with the nearest cube (shorter route)
 def en_yakin_nesneyi_bul(nesneler, mevcut_pos=[0.3, 0, 0.5]):
-    """En yakın nesneyi bul"""
+    """Find the nearest object"""
     en_yakin_idx = 0
     en_kucuk_mesafe = float('inf')
 
     for idx, nesne in enumerate(nesneler):
-        if nesne is None:  # Zaten işlendiyse atla
+        if nesne is None:  # Skip if it has already been processed
             continue
 
         nesne_pos, _ = p.getBasePositionAndOrientation(nesne)
@@ -198,22 +198,23 @@ def en_yakin_nesneyi_bul(nesneler, mevcut_pos=[0.3, 0, 0.5]):
 
     return en_yakin_idx
 
-print("  ✓ En yakın nesne algoritması aktif")
+print("  ✓ Nearest-object algorithm active")
 
 # =====================================================
-# OPTİMİZASYON 5: Paralel İşlemler
+# OPTIMIZATION 5: Parallel Processing
 # =====================================================
-print("\n[OPTİMİZASYON 5] Renk tanıma optimize edildi...")
+print("\n[OPTIMIZATION 5] Color recognition optimized...")
 
 RENKLER = {
-    "kirmizi": {"rgb": [1.0, 0.0, 0.0], "kutu_pos": [0.3, 0.25, 0.38]},
-    "mavi":    {"rgb": [0.0, 0.0, 1.0], "kutu_pos": [0.3, 0.0, 0.38]},
-    "yesil":   {"rgb": [0.0, 1.0, 0.0], "kutu_pos": [0.3, -0.25, 0.38]}
+    "red": {"rgb": [1.0, 0.0, 0.0], "kutu_pos": [0.3, 0.25, 0.38]},
+    "blue":    {"rgb": [0.0, 0.0, 1.0], "kutu_pos": [0.3, 0.0, 0.38]},
+    "green":   {"rgb": [0.0, 1.0, 0.0], "kutu_pos": [0.3, -0.25, 0.38]}
 }
+renk_gosterim = {"red": "red", "blue": "blue", "green": "green"}
 
-# YENI: Numpy ile vektörel hesaplama
+# NEW: Vectorized computation with NumPy
 def renk_tani_hizli(nesne_id):
-    """Vektörize edilmiş renk tanıma"""
+    """Vectorized color recognition"""
     visual_data = p.getVisualShapeData(nesne_id)
     if len(visual_data) == 0:
         return None
@@ -221,7 +222,7 @@ def renk_tani_hizli(nesne_id):
     rgba = visual_data[0][7]
     nesne_rgb = np.array(rgba[:3])
 
-    # Tüm renkleri aynı anda hesapla (numpy hızlı!)
+    # Calculate all colors at once (NumPy is fast!)
     mesafeler = {}
     for renk_adi, renk_bilgi in RENKLER.items():
         renk_rgb = np.array(renk_bilgi["rgb"])
@@ -229,14 +230,14 @@ def renk_tani_hizli(nesne_id):
 
     return min(mesafeler, key=mesafeler.get)
 
-print("  ✓ NumPy vektörizasyon aktif")
+print("  ✓ NumPy vectorization active")
 
 # =====================================================
-# NESNE OLUŞTURMA
+# CREATE OBJECTS
 # =====================================================
 
 def kup_olustur(pozisyon, renk_adi):
-    """Küp oluştur"""
+    """Create a cube"""
     renk_rgb = RENKLER[renk_adi]["rgb"]
     collision = p.createCollisionShape(p.GEOM_BOX, halfExtents=[0.02, 0.02, 0.02])
     visual = p.createVisualShape(p.GEOM_BOX, halfExtents=[0.02, 0.02, 0.02],
@@ -246,14 +247,14 @@ def kup_olustur(pozisyon, renk_adi):
     return nesne
 
 print("\n" + "="*70)
-print("KÜPLER OLUŞTURULUYOR")
+print("CREATING CUBES")
 print("="*70)
 
 num_cubes = 8
 nesneler = []
 nesne_renkleri = []
 
-print(f"\n→ {num_cubes} küp oluşturuluyor...")
+print(f"\n→ Creating {num_cubes} cubes...")
 
 renk_isimleri = list(RENKLER.keys())
 
@@ -267,74 +268,74 @@ for i in range(num_cubes):
     nesneler.append(kup)
     nesne_renkleri.append(renk)
 
-    print(f"  {i+1}. Küp: {renk:8s} → ({x:.2f}, {y:.2f})")
+    print(f"  {i+1}. Cube: {renk_gosterim[renk]:8s} → ({x:.2f}, {y:.2f})")
 
-# YENI: Daha az bekleme
-print("\n→ Küpler düşüyor...")
+# NEW: Wait less
+print("\n→ Cubes are falling...")
 for _ in range(150):  # 240 yerine 150
     p.stepSimulation()
     if GERCEK_ZAMANLI:
         time.sleep(1./180.)
 
-kirmizi_sayisi = nesne_renkleri.count("kirmizi")
-mavi_sayisi = nesne_renkleri.count("mavi")
-yesil_sayisi = nesne_renkleri.count("yesil")
+kirmizi_sayisi = nesne_renkleri.count("red")
+mavi_sayisi = nesne_renkleri.count("blue")
+yesil_sayisi = nesne_renkleri.count("green")
 
-print(f"\nRenk Dağılımı:")
-print(f"  🔴 Kırmızı: {kirmizi_sayisi}")
-print(f"  🔵 Mavi:    {mavi_sayisi}")
-print(f"  🟢 Yeşil:   {yesil_sayisi}")
+print(f"\nColor Distribution:")
+print(f"  🔴 Red:   {kirmizi_sayisi}")
+print(f"  🔵 Blue:  {mavi_sayisi}")
+print(f"  🟢 Green: {yesil_sayisi}")
 
-input("\nBaşlamak için ENTER'a basın...\n")
+input("\nPress ENTER to start...\n")
 
 # =====================================================
-# OPTİMİZE EDİLMİŞ PICK-AND-PLACE
+# OPTIMIZED PICK-AND-PLACE
 # =====================================================
 
 def pick_and_place_optimize(nesne_id, hedef_pos):
-    """Maksimum optimize edilmiş pick-and-place"""
+    """Maximally optimized pick-and-place"""
     nesne_pos, _ = p.getBasePositionAndOrientation(nesne_id)
 
-    # Tek hamlede yaklaş (ara adım yok!)
-    gripper_kontrol_hizli("ac")
+    # Approach in one move (no intermediate step!)
+    gripper_kontrol_hizli("open")
     kol_hareket_ettir_hizli([nesne_pos[0], nesne_pos[1], nesne_pos[2] + 0.15], sure=1.2)
     kol_hareket_ettir_hizli([nesne_pos[0], nesne_pos[1], nesne_pos[2]], sure=0.8)
-    gripper_kontrol_hizli("kapat", kuvvet=120)
+    gripper_kontrol_hizli("close", kuvvet=120)
 
-    # Direkt hedefe git (ara yükseklik yok!)
+    # Go directly to the target (no intermediate height!)
     kol_hareket_ettir_hizli([hedef_pos[0], hedef_pos[1], hedef_pos[2] + 0.15], sure=1.2)
     kol_hareket_ettir_hizli([hedef_pos[0], hedef_pos[1], hedef_pos[2]], sure=0.7)
-    gripper_kontrol_hizli("ac")
+    gripper_kontrol_hizli("open")
 
-    # Minimum bekleme
-    for _ in range(30):  # 60 yerine 30
+    # Minimum wait
+    for _ in range(30):  # 30 instead of 60
         p.stepSimulation()
         if GERCEK_ZAMANLI:
             time.sleep(1./180.)
 
 # =====================================================
-# OPTİMİZE EDİLMİŞ ANA DÖNGÜ
+# OPTIMIZED MAIN LOOP
 # =====================================================
 print("="*70)
-print("OPTİMİZE EDİLMİŞ SINIFLANDIRMA BAŞLIYOR")
+print("OPTIMIZED CLASSIFICATION STARTING")
 print("="*70)
 
 basari_sayisi = 0
 baslangic_zamani = time.time()
-kutu_sayaclari = {"kirmizi": 0, "mavi": 0, "yesil": 0}
+kutu_sayaclari = {"red": 0, "blue": 0, "green": 0}
 
-# Mevcut robot pozisyonu
+# Current robot position
 mevcut_pos = [0.5, 0, 0.5]
 
-# İşlenmiş nesneleri takip et
+# Track processed objects
 islenmis = [False] * num_cubes
 
 for islem_no in range(num_cubes):
     print(f"\n{'='*70}")
-    print(f"KÜP {islem_no+1}/{num_cubes}")
+    print(f"CUBE {islem_no+1}/{num_cubes}")
     print(f"{'='*70}")
 
-    # YENI: En yakın nesneyi seç
+    # NEW: Choose the nearest object
     en_yakin_idx = None
     for idx in range(num_cubes):
         if not islenmis[idx]:
@@ -353,110 +354,110 @@ for islem_no in range(num_cubes):
     nesne = nesneler[en_yakin_idx]
     islenmis[en_yakin_idx] = True
 
-    # Renk tanıma (hızlı)
+    # Color recognition (fast)
     taninan_renk = renk_tani_hizli(nesne)
     gercek_renk = nesne_renkleri[en_yakin_idx]
 
     if taninan_renk == gercek_renk:
-        print(f"  ✓ Renk: {taninan_renk.upper()}")
+        print(f"  ✓ Color: {renk_gosterim[taninan_renk]}")
         basari_sayisi += 1
     else:
         taninan_renk = gercek_renk
 
-    # Hedef hesapla
+    # Calculate target
     hedef_kutu = RENKLER[taninan_renk]["kutu_pos"]
     offset = kutu_sayaclari[taninan_renk] * 0.045
     hedef_final = [hedef_kutu[0], hedef_kutu[1] + offset - 0.045, hedef_kutu[2]]
 
-    print(f"  → {taninan_renk.upper()} kutusuna taşınıyor...")
+    print(f"  → Moving to the {renk_gosterim[taninan_renk]} bin...")
 
-    # Pick and place (optimize)
+    # Optimized pick-and-place
     pick_and_place_optimize(nesne, hedef_final)
     kutu_sayaclari[taninan_renk] += 1
 
-    # Yeni mevcut pozisyon
+    # New current position
     mevcut_pos = hedef_final
 
-    # İlerleme
+    # Progress
     tamamlanan = islem_no + 1
     kalan = num_cubes - tamamlanan
-    print(f"  İlerleme: {'█' * tamamlanan}{'░' * kalan} {tamamlanan}/{num_cubes}")
+    print(f"  Progress: {'█' * tamamlanan}{'░' * kalan} {tamamlanan}/{num_cubes}")
 
 bitis_zamani = time.time()
 toplam_sure = bitis_zamani - baslangic_zamani
 
 # =====================================================
-# SONUÇ - KARŞILAŞTIRMA
+# RESULTS - COMPARISON
 # =====================================================
 print("\n" + "="*70)
-print("OPTİMİZASYON SONUÇLARI")
+print("OPTIMIZATION RESULTS")
 print("="*70)
 
-print(f"\n📊 PERFORMANS METRİKLERİ:")
-print(f"  ⏱  Toplam Süre: {toplam_sure:.1f} saniye")
-print(f"  📦 İşlenen Küp: {num_cubes}")
-print(f"  ✓ Başarılı: {basari_sayisi}/{num_cubes}")
-print(f"  📈 Başarı Oranı: {(basari_sayisi/num_cubes)*100:.1f}%")
-print(f"  ⚡ Ortalama Süre: {toplam_sure/num_cubes:.1f} saniye/küp")
+print(f"\n📊 PERFORMANCE METRICS:")
+print(f"  ⏱  Total time: {toplam_sure:.1f} seconds")
+print(f"  📦 Cubes processed: {num_cubes}")
+print(f"  ✓ Successful: {basari_sayisi}/{num_cubes}")
+print(f"  📈 Success rate: {(basari_sayisi/num_cubes)*100:.1f}%")
+print(f"  ⚡ Average time: {toplam_sure/num_cubes:.1f} seconds/cube")
 
-# Karşılaştırma
-eski_sure = 64.0  # Önceki versiyon
+# Comparison
+eski_sure = 64.0  # Previous version
 kazanc = ((eski_sure - toplam_sure) / eski_sure) * 100
 
-print(f"\n🚀 OPTİMİZASYON KAZANCI:")
-print(f"  Önceki versiyon: ~{eski_sure:.0f} saniye")
-print(f"  Yeni versiyon:   {toplam_sure:.1f} saniye")
-print(f"  İyileşme:        %{kazanc:.1f} DAHA HIZLI! ⚡")
+print(f"\n🚀 OPTIMIZATION GAIN:")
+print(f"  Previous version: ~{eski_sure:.0f} seconds")
+print(f"  New version:      {toplam_sure:.1f} seconds")
+print(f"  Improvement:      {kazanc:.1f}% FASTER! ⚡")
 
 if toplam_sure < 50:
-    print(f"\n🎉 HEDEF AŞILDI! 50 saniye altına indi!")
+    print(f"\n🎉 TARGET EXCEEDED! Under 50 seconds!")
 elif toplam_sure < 55:
-    print(f"\n👍 ÇOK İYİ! Hedefe çok yakın!")
+    print(f"\n👍 VERY GOOD! Very close to the target!")
 else:
-    print(f"\n📝 İyi ama daha da optimize edilebilir.")
+    print(f"\n📝 Good, but it can be optimized further.")
 
-print(f"\n📦 KUTU DURUMU:")
-print(f"  🔴 Kırmızı: {kutu_sayaclari['kirmizi']} küp")
-print(f"  🔵 Mavi:    {kutu_sayaclari['mavi']} küp")
-print(f"  🟢 Yeşil:   {kutu_sayaclari['yesil']} küp")
+print(f"\n📦 BIN STATUS:")
+print(f"  🔴 Red:   {kutu_sayaclari['red']} cubes")
+print(f"  🔵 Blue:  {kutu_sayaclari['blue']} cubes")
+print(f"  🟢 Green: {kutu_sayaclari['green']} cubes")
 
 print("\n" + "="*70)
-print("UYGULANAN OPTİMİZASYONLAR")
+print("APPLIED OPTIMIZATIONS")
 print("="*70)
 print("""
-1. ⚙️  Simülasyon Parametreleri
-   - Fizik adımı: 1/240 → 1/180 (%25 hız artışı)
-   - Solver iterasyonları: 150 → 50 (işlem azalması)
+1. ⚙️  Simulation Parameters
+   - Physics time step: 1/240 → 1/180 (25% speed increase)
+   - Solver iterations: 150 → 50 (fewer operations)
 
-2. 💾 IK Önbellekleme (Cache)
-   - Aynı pozisyon için IK tekrar hesaplanmaz
-   - Bellek kullanımı: ~10 KB (ihmal edilebilir)
-   - Kazanç: %15-20
+2. 💾 IK Caching
+   - IK is not recalculated for the same position
+   - Memory usage: ~10 KB (negligible)
+   - Gain: 15-20%
 
-3. ⚡ Hareket Optimizasyonu
-   - Hız: 1.0 → 1.5 rad/s (%50 artış)
-   - Kuvvet: 87 → 100 N (daha hızlı)
-   - Adım sayısı: -25%
+3. ⚡ Movement Optimization
+   - Speed: 1.0 → 1.5 rad/s (50% increase)
+   - Force: 87 → 100 N (faster)
+   - Number of steps: -25%
 
-4. 🎯 Akıllı Yörünge
-   - En yakın nesne önce işlenir
-   - Toplam hareket mesafesi azalır
-   - Kazanç: %10-15
+4. 🎯 Smart Trajectory
+   - The nearest object is processed first
+   - Total travel distance is reduced
+   - Gain: 10-15%
 
-5. 🔢 Vektörize İşlemler
-   - NumPy ile renk hesaplaması
-   - Döngü yerine matris işlemi
-   - Kazanç: %5 (küçük ama önemli)
+5. 🔢 Vectorized Operations
+   - Color calculations with NumPy
+   - Matrix operations instead of loops
+   - Gain: 5% (small but important)
 
-6. ⏱️  Bekleme Süreleri
-   - Gripper: 80 → 50 step
-   - Nesne düşme: 240 → 150 step
-   - Ara beklemeler minimize edildi
+6. ⏱️  Wait Times
+   - Gripper: 80 → 50 steps
+   - Object fall: 240 → 150 steps
+   - Intermediate waits minimized
 
-TOPLAM KAZANÇ: ~%35-40 daha hızlı! 🚀
+TOTAL GAIN: ~35-40% faster! 🚀
 """)
 
-input("\nSimülasyonu kapatmak için ENTER...\n")
+input("\nPress ENTER to close the simulation...\n")
 
 p.disconnect()
-print("✓ Tamamlandı")
+print("✓ Complete")

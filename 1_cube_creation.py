@@ -1,51 +1,51 @@
 """
-PyBullet Kurulum Test Kodu
-Bu kod basitçe bir pencere açar ve bir küp düşürür.
-Amaç: PyBullet'in doğru kurulduğunu görmek
+PyBullet installation test code.
+This code simply opens a window and drops a cube.
+Purpose: Verify that PyBullet is installed correctly.
 """
 
 import pybullet as p
 import pybullet_data
 import time
 
-# ADIM 1: Simülasyon penceresini aç (GUI = Graphical User Interface)
-# p.DIRECT kullanırsanız pencere açılmaz, sadece hesaplamalar yapılır
+# STEP 1: Open the simulation window (GUI = Graphical User Interface)
+# If you use p.DIRECT, no window opens; only calculations are performed.
 physicsClient = p.connect(p.GUI)
-p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0) # Görüntüyü basitleştirir
-print("PyBullet başarıyla başlatıldı!")
+p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0) # Simplifies the display.
+print("PyBullet started successfully!")
 
-# ADIM 2: PyBullet'in hazır model klasörünü ekle
-# Bu klasörde zemin, arabalar, robotlar gibi hazır modeller var
+# STEP 2: Add PyBullet's built-in model directory.
+# This directory contains ready-made models such as planes, cars, and robots.
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 
-# ADIM 3: Yerçekimini ayarla (m/s^2)
-# Dünya'da z ekseni -9.81 (aşağı doğru)
-p.setGravity(0, 0, -2)
+# STEP 3: Set gravity (m/s^2).
+# On Earth, the z-axis gravity is -9.81 (downward).
+p.setGravity(0, 0, -9.81)
 
-# ADIM 4: Zemin ekle (düz bir platform)
+# STEP 4: Add a floor (a flat platform).
 planeId = p.loadURDF("plane.urdf")
-print("Zemin eklendi")
+print("Floor added")
 
-# ADIM 5: Bir küp ekle (başlangıç pozisyonu: x=0, y=0, z=1)
-# URDF = Unified Robot Description Format (robot tanım dosyası)
-cubeStartPos = [0, 0, 5]  # 1 metre yükseklikte
-cubeStartOrientation = p.getQuaternionFromEuler([0, 0, 0])  # Dönüş yok
+# STEP 5: Add a cube (starting position: x=0, y=0, z=5).
+# URDF = Unified Robot Description Format (robot description file).
+cubeStartPos = [0, 0, 5]  # Initial z-coordinate: 5 meters.
+cubeStartOrientation = p.getQuaternionFromEuler([0, 0, 0])  # No rotation.
 boxId = p.loadURDF("cube.urdf", cubeStartPos, cubeStartOrientation)
-print("Küp eklendi, düşecek...")
+print("Cube added; it will fall...")
 
-# ADIM 6: Simülasyonu çalıştır (240 adım = yaklaşık 1 saniye)
-# Her stepSimulation() çağrısı fiziği 1/240 saniye ilerletir
+# STEP 6: Run the simulation (240 steps = approximately 1 second).
+# Each call to stepSimulation() advances the physics by 1/240 of a second.
 for i in range(240):
-    p.stepSimulation()  # Fiziği bir adım ilerlet
-    time.sleep(1./240.)  # Gerçek zamanlı görmek için bekle
+    p.stepSimulation()  # Advance the physics by one step.
+    time.sleep(1./240.)  # Wait to observe the simulation in real time.
 
-# ADIM 7: Küpün son pozisyonunu al
+# STEP 7: Get the cube's final position.
 cubePos, cubeOrn = p.getBasePositionAndOrientation(boxId)
-print(f"Küpün son pozisyonu: {cubePos}")
-print("Zemine düştü! (z koordinatı ~0.5 olmalı, küpün yüksekliği 0.5m)")
+print(f"Final cube position: {cubePos}")
+print("It fell to the floor! (z-coordinate should be approximately 0.5; the cube is 0.5 m tall)")
 
-# Pencereyi açık tut
-print("\nPencereyi kapatmak için CTRL+C yapın")
+# Keep the window open.
+print("\nPress CTRL+C to close the window")
 while True:
     p.stepSimulation()
     time.sleep(1./240.)

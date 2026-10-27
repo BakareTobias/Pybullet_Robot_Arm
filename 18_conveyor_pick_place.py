@@ -1,22 +1,22 @@
 """
-DERS 5: PYBULLET İLE CONVEYOR BELT PICK & PLACE (GELİŞTİRİLMİŞ)
+LESSON 5: PICK & PLACE WITH A PYBULLET CONVEYOR BELT (ADVANCED)
 ================================================================
 
-PyBullet Avantajları:
-✓ %100 Python - Lua script yok!
-✓ Güçlü fizik simülasyonu
-✓ Gerçek robot'a kolay geçiş
-✓ ROS entegrasyonu
-✓ Machine Learning için ideal
+PyBullet advantages:
+✓ 100% Python - no Lua scripts!
+✓ Powerful physics simulation
+✓ Easy transition to a real robot
+✓ ROS integration
+✓ Ideal for machine learning
 
-Kurulum:
+Installation:
 pip install pybullet numpy
 
-GELİŞTİRMELER:
-✓ Franka Panda robot (gripper dahil!)
-✓ Conveyor belt robota çarpmayacak şekilde yerleştirildi
-✓ Daha iyi pozisyonlama
-✓ Gelişmiş gripper kontrolü
+IMPROVEMENTS:
+✓ Franka Panda robot (including gripper!)
+✓ Conveyor belt positioned to avoid colliding with the robot
+✓ Better positioning
+✓ Improved gripper control
 
 """
 
@@ -28,50 +28,50 @@ import math
 
 class PyBulletConveyorSystem:
     """
-    PyBullet ile Conveyor Belt Pick-Place Sistemi
-    Franka Panda Robot ile
+    Conveyor belt pick-and-place system using PyBullet
+    With a Franka Panda robot
     """
     
     def __init__(self, gui=True):
         """
         Args:
-            gui: True ise görsel arayüz açılır
+            gui: If True, open the graphical interface
         """
         
-        # PyBullet başlat
+        # Start PyBullet
         if gui:
             self.physics_client = p.connect(p.GUI)
-            p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)  # GUI'yi basitleştir
-            print("✅ PyBullet GUI modu başlatıldı")
+            p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)  # Simplify the GUI
+            print("✅ PyBullet GUI mode started")
         else:
             self.physics_client = p.connect(p.DIRECT)
-            print("✅ PyBullet DIRECT modu başlatıldı")
+            print("✅ PyBullet DIRECT mode started")
         
-        # Ek data yollarını ekle
+        # Add additional data paths
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         
-        # Yerçekimi ayarla
+        # Set gravity
         p.setGravity(0, 0, -9.81)
         
-        # Zaman adımı
+        # Time step
         p.setTimeStep(1./240.)
         
-        # Objeler
+        # Objects
         self.robot_id = None
         self.conveyor_id = None
         self.objects = []
         self.gripper_constraint = None
         
-        # Conveyor parametreleri (Robot'un YANINDA, üstünde değil!)
+        # Conveyor parameters (NEXT TO the robot, not above it!)
         self.conveyor_speed = 0.08  # m/s
         self.conveyor_length = 1.5
         self.conveyor_width = 0.4
-        self.conveyor_position = [0.5, 0.5, 0.05]  # Robot'un yanında
+        self.conveyor_position = [0.5, 0.5, 0.05]  # Beside the robot
         
-        # Robot konumu
+        # Robot position
         self.robot_base_position = [0, 0, 0]
         
-        # İstatistikler
+        # Statistics
         self.stats = {
             'spawned': 0,
             'detected': 0,
@@ -80,33 +80,33 @@ class PyBulletConveyorSystem:
             'failed': 0
         }
         
-        # Sahneyi kur
+        # Set up the scene
         self._setup_scene()
         
-        print("✅ PyBullet Conveyor Sistemi Hazır!")
+        print("✅ PyBullet conveyor system ready!")
         print(f"   Robot: Franka Panda @ {self.robot_base_position}")
         print(f"   Conveyor: @ {self.conveyor_position}")
     
-    # ==================== SAHNE KURULUMU ====================
+    # ==================== SCENE SETUP ====================
     
     def _setup_scene(self):
-        """Sahneyi kur: Zemin, robot, conveyor belt"""
+        """Set up the scene: ground, robot, and conveyor belt."""
         
-        print("\n🏗️  Sahne kuruluyor...")
+        print("\n🏗️  Setting up the scene...")
         
-        # 1. Zemin (plane)
+        # 1. Ground plane
         self.plane_id = p.loadURDF("plane.urdf")
         
-        # 2. Robot yükle (Franka Panda - gripper dahil!)
+        # 2. Load the robot (Franka Panda, including gripper)
         self._load_franka_panda()
         
-        # 3. Conveyor Belt oluştur (Robot'un YANINDA)
+        # 3. Create the conveyor belt (BESIDE the robot)
         self._create_conveyor_belt()
         
-        # 4. Bırakma kutusu (drop zone)
+        # 4. Drop box (drop zone)
         self._create_drop_zone()
         
-        # 5. Kamera ayarla
+        # 5. Set the camera
         p.resetDebugVisualizerCamera(
             cameraDistance=2.0,
             cameraYaw=45,
@@ -114,12 +114,12 @@ class PyBulletConveyorSystem:
             cameraTargetPosition=[0.3, 0.3, 0.3]
         )
         
-        print("✅ Sahne kurulumu tamamlandı!")
+        print("✅ Scene setup complete!")
     
     def _load_franka_panda(self):
-        """Franka Panda robot yükle (gripper dahil!)"""
+        """Load the Franka Panda robot (including gripper)."""
         
-        print("   → Franka Panda yükleniyor...")
+        print("   → Loading Franka Panda...")
         
         try:
             # Franka Panda robot
@@ -131,10 +131,10 @@ class PyBulletConveyorSystem:
                 flags=p.URDF_USE_SELF_COLLISION
             )
             
-            # Joint bilgilerini al
+            # Get joint information
             self.num_joints = p.getNumJoints(self.robot_id)
             
-            # Franka Panda joint yapısı:
+            # Franka Panda joint layout:
             # 0-6: Arm joints (7-DOF)
             # 7-8: Gripper joints (finger joints)
             self.arm_joints = list(range(7))  # 7-DOF arm
@@ -143,45 +143,45 @@ class PyBulletConveyorSystem:
             # End-effector link (panda_hand)
             self.end_effector_link = 11  # panda_hand link
             
-            print(f"   ✅ Franka Panda yüklendi (ID: {self.robot_id})")
-            print(f"      Toplam joint: {self.num_joints}")
+            print(f"   ✅ Franka Panda loaded (ID: {self.robot_id})")
+            print(f"      Total joints: {self.num_joints}")
             print(f"      Arm joints: {self.arm_joints}")
             print(f"      Gripper joints: {self.gripper_joints}")
             
-            # Joint limitlerini al
+            # Get joint limits
             self._get_joint_limits()
             
-            # Home pozisyonuna git
+            # Move to the home position
             home_position = [0, -0.785, 0, -2.356, 0, 1.571, 0.785]
             self.move_to_joint_positions(home_position)
             
-            # Gripper'ı başlangıçta aç
+            # Open the gripper initially
             self.gripper_open()
             
         except Exception as e:
-            print(f"❌ Franka Panda yüklenemedi: {e}")
-            print("   Lütfen PyBullet'in güncel olduğundan emin olun!")
+            print(f"❌ Failed to load Franka Panda: {e}")
+            print("   Please make sure PyBullet is up to date!")
             raise
     
     def _create_conveyor_belt(self):
-        """Conveyor belt oluştur (Robot'un yanında!)"""
+        """Create the conveyor belt (beside the robot!)."""
         
-        print("   → Conveyor belt oluşturuluyor...")
+        print("   → Creating the conveyor belt...")
         
-        # Görsel şekil
+        # Visual shape
         visual_shape = p.createVisualShape(
             shapeType=p.GEOM_BOX,
             halfExtents=[self.conveyor_length/2, self.conveyor_width/2, 0.05],
             rgbaColor=[0.3, 0.3, 0.3, 1]
         )
         
-        # Çarpışma şekli
+        # Collision shape
         collision_shape = p.createCollisionShape(
             shapeType=p.GEOM_BOX,
             halfExtents=[self.conveyor_length/2, self.conveyor_width/2, 0.05]
         )
         
-        # Conveyor belt oluştur
+        # Create the conveyor belt
         self.conveyor_id = p.createMultiBody(
             baseMass=0,  # Sabit
             baseCollisionShapeIndex=collision_shape,
@@ -189,9 +189,9 @@ class PyBulletConveyorSystem:
             basePosition=self.conveyor_position
         )
         
-        print(f"   ✅ Conveyor belt oluşturuldu @ {self.conveyor_position}")
+        print(f"   ✅ Conveyor belt created @ {self.conveyor_position}")
         
-        # Yön göstergesi (ok) - opsiyonel
+        # Direction indicator (arrow) - optional
         arrow_visual = p.createVisualShape(
             shapeType=p.GEOM_BOX,
             halfExtents=[0.05, 0.02, 0.001],
@@ -211,18 +211,18 @@ class PyBulletConveyorSystem:
         )
     
     def _create_drop_zone(self):
-        """Bırakma kutusu oluştur"""
+        """Create the drop box."""
         
-        print("   → Bırakma kutusu oluşturuluyor...")
+        print("   → Creating the drop box...")
         
-        # Kutu görsel
+        # Box visual
         box_visual = p.createVisualShape(
             shapeType=p.GEOM_BOX,
             halfExtents=[0.15, 0.15, 0.1],
             rgbaColor=[0.2, 0.8, 0.2, 0.3]
         )
         
-        # Kutu pozisyonu (Robot'un diğer tarafı)
+        # Box position (the other side of the robot)
         drop_position = [0, -0.5, 0.1]
         
         self.drop_zone_id = p.createMultiBody(
@@ -233,10 +233,10 @@ class PyBulletConveyorSystem:
         
         self.drop_position = [drop_position[0], drop_position[1], drop_position[2] + 0.15]
         
-        print(f"   ✅ Bırakma kutusu @ {drop_position}")
+        print(f"   ✅ Drop box @ {drop_position}")
     
     def _get_joint_limits(self):
-        """Joint limitlerini al"""
+        """Get joint limits."""
         self.joint_limits = []
         
         for joint_idx in self.arm_joints:
@@ -245,18 +245,18 @@ class PyBulletConveyorSystem:
             upper_limit = joint_info[9]
             self.joint_limits.append((lower_limit, upper_limit))
     
-    # ==================== ROBOT KONTROLÜ ====================
+    # ==================== ROBOT CONTROL ====================
     
     def move_to_joint_positions(self, target_positions, max_velocity=0.5):
         """
-        Joint pozisyonlarına git (smooth hareket)
+        Move to joint positions (smooth motion).
         
         Args:
-            target_positions: Hedef joint açıları (radyan)
-            max_velocity: Maksimum hız
+            target_positions: Target joint angles (radians)
+            max_velocity: Maximum velocity
         """
         
-        # Her joint için pozisyon kontrolü
+        # Control the position of each joint
         for i, joint_idx in enumerate(self.arm_joints):
             if i < len(target_positions):
                 p.setJointMotorControl2(
@@ -268,21 +268,21 @@ class PyBulletConveyorSystem:
                     force=200
                 )
         
-        # Simülasyonu çalıştır (hareketi tamamla)
-        # Hareketin bitmesini bekle
+        # Run the simulation to complete the movement
+        # Wait for the movement to finish
         for _ in range(480):  # ~1 saniye
             p.stepSimulation()
             time.sleep(1./240.)
             
-            # Hedefe yaklaşıp yaklaşmadığını kontrol et
+            # Check whether the target has been approached
             current_positions = [p.getJointState(self.robot_id, j)[0] for j in self.arm_joints[:len(target_positions)]]
             diff = np.abs(np.array(current_positions) - np.array(target_positions))
-            if np.all(diff < 0.01):  # Yeterince yakın
+            if np.all(diff < 0.01):  # Close enough
                 break
     
     def get_end_effector_pose(self):
         """
-        End-effector'ın pozisyon ve yönlendirmesini al
+        Get the end-effector position and orientation.
         
         Returns:
             (position, orientation) tuple
@@ -301,18 +301,18 @@ class PyBulletConveyorSystem:
     
     def inverse_kinematics(self, target_position, target_orientation=None):
         """
-        Ters kinematik çözümü
+        Solve inverse kinematics.
         
         Args:
             target_position: [x, y, z]
-            target_orientation: Quaternion (opsiyonel)
+            target_orientation: Quaternion (optional)
         
         Returns:
-            Joint açıları
+            Joint angles
         """
         
         if target_orientation is None:
-            # Varsayılan yönlendirme (aşağı bakan)
+            # Default orientation (facing downward)
             target_orientation = p.getQuaternionFromEuler([math.pi, 0, 0])
         
         joint_poses = p.calculateInverseKinematics(
@@ -328,28 +328,28 @@ class PyBulletConveyorSystem:
     
     def move_to_position(self, target_position, target_orientation=None, velocity=0.5):
         """
-        Cartesian pozisyona git (IK kullanarak)
+        Move to a Cartesian position (using IK).
         
         Args:
             target_position: [x, y, z]
-            target_orientation: Quaternion (opsiyonel)
-            velocity: Hareket hızı
+            target_orientation: Quaternion (optional)
+            velocity: Movement speed
         """
         
-        # IK hesapla
+        # Calculate IK
         joint_positions = self.inverse_kinematics(target_position, target_orientation)
         
-        # Joint pozisyonlarına git
+        # Move to the joint positions
         self.move_to_joint_positions(joint_positions, max_velocity=velocity)
     
-    # ==================== GRIPPER KONTROLÜ ====================
+    # ==================== GRIPPER CONTROL ====================
     
     def gripper_open(self, width=0.04):
         """
-        Gripper'ı aç
+        Open the gripper.
         
         Args:
-            width: Açıklık miktarı (metre)
+            width: Opening width (meters)
         """
         
         for joint_idx in self.gripper_joints:
@@ -361,17 +361,17 @@ class PyBulletConveyorSystem:
                 force=20
             )
         
-        # Gripper'ın açılmasını bekle
+        # Wait for the gripper to open
         for _ in range(60):
             p.stepSimulation()
             time.sleep(1./240.)
     
     def gripper_close(self, force=40):
         """
-        Gripper'ı kapat
+        Close the gripper.
         
         Args:
-            force: Kapama kuvveti
+            force: Closing force
         """
         
         for joint_idx in self.gripper_joints:
@@ -383,50 +383,50 @@ class PyBulletConveyorSystem:
                 force=force
             )
         
-        # Gripper'ın kapanmasını bekle
+        # Wait for the gripper to close
         for _ in range(60):
             p.stepSimulation()
             time.sleep(1./240.)
     
     def check_gripper_grasp(self):
         """
-        Gripper'da nesne var mı kontrol et
+        Check whether there is an object in the gripper.
         
         Returns:
-            bool: Nesne yakalandı mı?
+            bool: Whether an object was grasped
         """
         
-        # Gripper joint'lerinin mevcut pozisyonlarını al
+        # Get the current positions of the gripper joints
         finger_states = [p.getJointState(self.robot_id, j)[0] for j in self.gripper_joints]
         
-        # Eğer gripper tam kapanmamışsa, bir şey tutuyordur
+        # If the gripper has not fully closed, it is holding something
         avg_position = np.mean(finger_states)
         
-        # Kapanma toleransı
-        return avg_position > 0.005  # 5mm'den fazla açıksa nesne var demektir
+        # Closing tolerance
+        return avg_position > 0.005  # An opening wider than 5 mm indicates an object is present
     
-    # ==================== NESNE YÖNETİMİ ====================
+    # ==================== OBJECT MANAGEMENT ====================
     
     def spawn_object(self, position=None, size=0.03):
         """
-        Band üzerinde nesne oluştur
+        Create an object on the belt.
         
         Args:
-            position: [x, y, z] - None ise otomatik
-            size: Nesne boyutu
+            position: [x, y, z] - automatically assigned if None
+            size: Object size
         
         Returns:
             object_id
         """
         
         if position is None:
-            # Conveyor başlangıcında rastgele pozisyon
+            # Random position at the start of the conveyor
             conv_start_x = self.conveyor_position[0] - self.conveyor_length/2 + 0.15
             conv_y = self.conveyor_position[1] + np.random.uniform(-0.12, 0.12)
             conv_z = self.conveyor_position[2] + 0.15
             position = [conv_start_x, conv_y, conv_z]
         
-        # Rastgele şekil seç
+        # Choose a random shape
         shape_choice = np.random.choice(['box', 'cylinder', 'sphere'])
         
         if shape_choice == 'box':
@@ -462,7 +462,7 @@ class PyBulletConveyorSystem:
                 radius=size
             )
         
-        # Obje oluştur
+        # Create the object
         obj_id = p.createMultiBody(
             baseMass=0.05,
             baseCollisionShapeIndex=collision_shape,
@@ -479,67 +479,67 @@ class PyBulletConveyorSystem:
         
         self.stats['spawned'] += 1
         
-        print(f"📦 {shape_choice.upper()} oluşturuldu (ID: {obj_id}) @ [{position[0]:.2f}, {position[1]:.2f}, {position[2]:.2f}]")
+        print(f"📦 {shape_choice.upper()} created (ID: {obj_id}) @ [{position[0]:.2f}, {position[1]:.2f}, {position[2]:.2f}]")
         
         return obj_id
     
     def update_conveyor(self, dt=1./240.):
         """
-        Conveyor belt hareketini simüle et
-        Band üzerindeki nesneleri hareket ettir
+        Simulate conveyor belt movement.
+        Move objects on the belt.
         
         Args:
-            dt: Zaman adımı (saniye)
+            dt: Time step (seconds)
         """
         
-        # Band üzerindeki tüm nesneleri bul ve hareket ettir
-        for obj_data in self.objects[:]:  # Copy ile iterate et (silme için güvenli)
+        # Find and move all objects on the belt
+        for obj_data in self.objects[:]:  # Iterate over a copy (safe for removal)
             obj_id = obj_data['id']
             
-            # Nesne hala var mı kontrol et
+            # Check whether the object still exists
             try:
                 position, orientation = p.getBasePositionAndOrientation(obj_id)
                 
-                # X ekseninde ileri hareket (band yönü)
+                # Move forward along the X axis (belt direction)
                 new_x = position[0] + self.conveyor_speed * dt
                 
-                # Band sonuna ulaştıysa sil
+                # Remove the object if it has reached the end of the belt
                 conv_end_x = self.conveyor_position[0] + self.conveyor_width/2
                 if new_x > conv_end_x + 0.2:
                     p.removeBody(obj_id)
                     self.objects.remove(obj_data)
                     continue
                 
-                # Yeni pozisyon
+                # New position
                 new_position = [new_x, position[1], position[2]]
                 
-                # Pozisyonu güncelle (sadece yakalanmamış objeler için)
+                # Update the position (only for objects that have not been picked)
                 if not obj_data['picked']:
                     p.resetBasePositionAndOrientation(obj_id, new_position, orientation)
                 
             except:
-                # Nesne silinmişse listeden çıkar
+                # Remove the object from the list if it has been deleted
                 if obj_data in self.objects:
                     self.objects.remove(obj_data)
     
     def detect_objects_in_zone(self, zone_x_min=None, zone_x_max=None):
         """
-        Belirli bir bölgedeki nesneleri algıla (X EKSENİNDE)
+        Detect objects in a specific area (along the X axis).
 
         Args:
-            zone_x_min: Bölge X minimum
-            zone_x_max: Bölge X maksimum
+            zone_x_min: Minimum X coordinate of the area
+            zone_x_max: Maximum X coordinate of the area
         
         Returns:
-            Liste: Algılanan nesneler
+            List: Detected objects
         """
         
         if zone_x_min is None:
-            # Robot'un erişebileceği alan (X ekseninde)
-            zone_x_min = self.conveyor_position[0] - 0.15 # Bu değerleri robotun erişimine göre ayarlayabilirsiniz
+            # Area reachable by the robot (along the X axis)
+            zone_x_min = self.conveyor_position[0] - 0.15 # Adjust these values to match the robot's reach
         
         if zone_x_max is None:
-            zone_x_max = self.conveyor_position[0] + 0.15 # Bu değerleri robotun erişimine göre ayarlayabilirsiniz
+            zone_x_max = self.conveyor_position[0] + 0.15 # Adjust these values to match the robot's reach
         
         detected = []
         
@@ -552,9 +552,9 @@ class PyBulletConveyorSystem:
             try:
                 position, _ = p.getBasePositionAndOrientation(obj_id)
                 
-                # Bölge kontrolü (X ekseninde)
+                # Check the area (along the X axis)
                 if zone_x_min <= position[0] <= zone_x_max:
-                    # Y ekseninde conveyor üzerinde mi?
+                    # Is it on the conveyor along the Y axis?
                     conv_y_min = self.conveyor_position[1] - self.conveyor_width/2
                     conv_y_max = self.conveyor_position[1] + self.conveyor_width/2
                     
@@ -574,58 +574,58 @@ class PyBulletConveyorSystem:
     
     def pick_object(self, target_position, approach_height=0.35):
         """
-        Nesneyi yakala
+        Grasp an object.
         
         Args:
-            target_position: Hedef pozisyon [x, y, z]
-            approach_height: Yaklaşma yüksekliği
+            target_position: Target position [x, y, z]
+            approach_height: Approach height
         
         Returns:
-            bool: Başarılı mı?
+            bool: Whether the operation succeeded
         """
         
-        print(f"\n🎯 Yakalama başlıyor: [{target_position[0]:.3f}, {target_position[1]:.3f}, {target_position[2]:.3f}]")
+        print(f"\n🎯 Starting grasp: [{target_position[0]:.3f}, {target_position[1]:.3f}, {target_position[2]:.3f}]")
         
-        # 1. Gripper'ı aç
+        # 1. Open the gripper
         self.gripper_open()
-        print("   → Gripper açıldı")
+        print("   → Gripper opened")
         
-        # 2. Yaklaşma pozisyonuna git (yüksekte)
+        # 2. Move to the approach position (above the object)
         approach_pos = list(target_position)
         approach_pos[2] = approach_height
         
-        print("   → Yaklaşma pozisyonuna gidiliyor...")
+        print("   → Moving to the approach position...")
         self.move_to_position(approach_pos, velocity=0.8)
         
-        # 3. Nesneye doğru in
-        print("   → Nesneye doğru iniliyor...")
+        # 3. Move down toward the object
+        print("   → Moving down toward the object...")
         grasp_pos = list(target_position)
-        grasp_pos[2] = target_position[2]  # Biraz üstten yakala
+        grasp_pos[2] = target_position[2]  # Grasp slightly from above
         
         self.move_to_position(grasp_pos, velocity=0.3)
         
-        # 4. Gripper'ı kapat
-        print("   → Gripper kapatılıyor...")
+        # 4. Close the gripper
+        print("   → Closing the gripper...")
         self.gripper_close()
         
-        # 5. Kontrol et
+        # 5. Check the grasp
         has_object = self.check_gripper_grasp()
         
         if has_object:
-            print("   ✅ Nesne yakalandı!")
+            print("   ✅ Object grasped!")
             self.stats['picked'] += 1
             
-            # 6. Yukarı kaldır
+            # 6. Lift upward
             lift_pos = list(grasp_pos)
             lift_pos[2] = approach_height
             self.move_to_position(lift_pos, velocity=0.5)
             
             return True
         else:
-            print("   ❌ Nesne yakalanamadı!")
+            print("   ❌ Failed to grasp the object!")
             self.stats['failed'] += 1
             
-            # Gripper'ı aç ve geri çekil
+            # Open the gripper and retreat
             self.gripper_open()
             self.move_to_position(approach_pos, velocity=0.5)
             
@@ -633,123 +633,123 @@ class PyBulletConveyorSystem:
     
     def place_object(self):
         """
-        Nesneyi bırakma kutusuna bırak
+        Place the object in the drop box.
         """
         
-        print(f"\n📦 Nesne bırakılıyor @ [{self.drop_position[0]:.3f}, {self.drop_position[1]:.3f}, {self.drop_position[2]:.3f}]")
+        print(f"\n📦 Placing object @ [{self.drop_position[0]:.3f}, {self.drop_position[1]:.3f}, {self.drop_position[2]:.3f}]")
         
-        # 1. Bırakma pozisyonuna git
+        # 1. Move to the drop position
         self.move_to_position(self.drop_position, velocity=0.8)
         
-        # 2. Gripper'ı aç
+        # 2. Open the gripper
         self.gripper_open()
         
         self.stats['dropped'] += 1
-        print("   ✅ Nesne bırakıldı!")
+        print("   ✅ Object placed!")
         
         time.sleep(0.3)
     
     def go_home(self):
-        """Home pozisyonuna dön"""
-        print("\n🏠 Home pozisyonuna dönülüyor...")
+        """Return to the home position."""
+        print("\n🏠 Returning to the home position...")
         home_position = [0, -0.785, 0, -2.356, 0, 1.571, 0.785]
         self.move_to_joint_positions(home_position, max_velocity=0.8)
     
-    # ==================== ANA DÖNGÜ ====================
+    # ==================== MAIN LOOP ====================
     
     def run_single_cycle(self):
-        """Tek bir pick-place döngüsü"""
+        """Run one pick-and-place cycle."""
         
         print("\n" + "="*60)
-        print("🔄 TEK DÖNGÜ")
+        print("🔄 SINGLE CYCLE")
         print("="*60)
         
-        # Gözlem pozisyonuna git
+        # Move to the observation position
         observe_position = [0, -0.3, 0, -1.5, 0, 1.2, 0.785]
         self.move_to_joint_positions(observe_position)
         
-        # Biraz bekle (nesne yaklaşsın)
-        print("⏳ Nesne bekleniyor...")
+        # Wait briefly for an object to approach
+        print("⏳ Waiting for an object...")
         for _ in range(60):
             self.update_conveyor()
             p.stepSimulation()
             time.sleep(1./240.)
         
-        # Nesneleri algıla
+        # Detect objects
         detected = self.detect_objects_in_zone()
         
         if not detected:
-            print("❌ Yakalama bölgesinde nesne yok!")
+            print("❌ No object in the grasping area!")
             return False
         
-        # En yakın nesneyi seç
+        # Select the nearest object
         target = detected[0]
-        print(f"🎯 Hedef: ID={target['id']} @ [{target['position'][0]:.3f}, {target['position'][1]:.3f}, {target['position'][2]:.3f}]")
+        print(f"🎯 Target: ID={target['id']} @ [{target['position'][0]:.3f}, {target['position'][1]:.3f}, {target['position'][2]:.3f}]")
         
-        # Yakala
+        # Grasp the object
         success = self.pick_object(target['position'])
         
         if success:
-            # Yakalanan nesneyi işaretle
+            # Mark the object as picked
             target['data']['picked'] = True
             
-            # Bırak
+            # Place the object
             self.place_object()
             
-            # Home'a dön
+            # Return home
             self.go_home()
             
             return True
         else:
-            # Home'a dön
+            # Return home
             self.go_home()
             return False
     
     def run_continuous(self, duration=60, spawn_interval=5):
         """
-        Sürekli pick-place döngüsü
+        Run a continuous pick-and-place loop.
         
         Args:
-            duration: Toplam süre (saniye)
-            spawn_interval: Nesne oluşturma aralığı (saniye)
+            duration: Total duration (seconds)
+            spawn_interval: Object creation interval (seconds)
         """
         
         print("\n" + "="*70)
-        print("🤖 FRANKA PANDA CONVEYOR PICK-PLACE SİSTEMİ")
+        print("🤖 FRANKA PANDA CONVEYOR PICK-AND-PLACE SYSTEM")
         print("="*70)
-        print(f"Süre: {duration} saniye")
-        print(f"Nesne oluşturma aralığı: {spawn_interval} saniye")
-        print(f"Band pozisyonu: {self.conveyor_position}")
-        print(f"Robot pozisyonu: {self.robot_base_position}")
+        print(f"Duration: {duration} seconds")
+        print(f"Object creation interval: {spawn_interval} seconds")
+        print(f"Belt position: {self.conveyor_position}")
+        print(f"Robot position: {self.robot_base_position}")
         print()
         
         start_time = time.time()
         last_spawn_time = start_time
         last_pick_time = start_time
         
-        # Gözlem pozisyonuna git
+        # Move to the observation position
         observe_position = [0, -0.3, 0, -1.5, 0, 1.2, 0.785]
         self.move_to_joint_positions(observe_position)
         
-        # Ana döngü
+        # Main loop
         step_count = 0
         while time.time() - start_time < duration:
             
-            # Conveyor'ı güncelle
+            # Update the conveyor
             self.update_conveyor()
             
-            # Yeni nesne oluştur
+            # Create a new object
             if time.time() - last_spawn_time > spawn_interval:
                 self.spawn_object()
                 last_spawn_time = time.time()
             
-            # Pick-place işlemi (her 10 saniyede bir)
+            # Perform pick-and-place (every 10 seconds)
             if time.time() - last_pick_time > 10:
                 detected = self.detect_objects_in_zone()
                 
                 if detected:
                     target = detected[0]
-                    print(f"\n🎯 Hedef seçildi: ID={target['id']}")
+                    print(f"\n🎯 Target selected: ID={target['id']}")
                     
                     success = self.pick_object(target['position'])
                     
@@ -759,147 +759,147 @@ class PyBulletConveyorSystem:
                     
                     self.go_home()
                     
-                    # Gözlem pozisyonuna geri dön
+                    # Return to the observation position
                     self.move_to_joint_positions(observe_position)
                 
                 last_pick_time = time.time()
             
-            # Simülasyonu ilerlet
+            # Advance the simulation
             p.stepSimulation()
             time.sleep(1./240.)
             step_count += 1
             
-            # Her 240 adımda bir (1 saniye) durum mesajı
+            # Print a status message every 240 steps (1 second)
             if step_count % 240 == 0:
                 elapsed = time.time() - start_time
                 remaining = duration - elapsed
-                print(f"⏱️  Geçen: {elapsed:.1f}s | Kalan: {remaining:.1f}s | Toplam nesne: {len(self.objects)}")
+                print(f"⏱️  Elapsed: {elapsed:.1f}s | Remaining: {remaining:.1f}s | Total objects: {len(self.objects)}")
         
-        # İstatistikleri göster
+        # Show statistics
         self.print_statistics()
         
         print("\n" + "="*70)
-        print("✅ SİMÜLASYON TAMAMLANDI!")
+        print("✅ SIMULATION COMPLETE!")
         print("="*70)
     
     def print_statistics(self):
-        """İstatistikleri yazdır"""
+        """Print statistics."""
         
         print("\n" + "="*60)
-        print("📊 İSTATİSTİKLER")
+        print("📊 STATISTICS")
         print("="*60)
-        print(f"   Oluşturulan nesneler: {self.stats['spawned']}")
-        print(f"   Algılanan nesneler: {self.stats['detected']}")
-        print(f"   Yakalanan nesneler: {self.stats['picked']}")
-        print(f"   Bırakılan nesneler: {self.stats['dropped']}")
-        print(f"   Başarısız denemeler: {self.stats['failed']}")
+        print(f"   Objects created: {self.stats['spawned']}")
+        print(f"   Objects detected: {self.stats['detected']}")
+        print(f"   Objects grasped: {self.stats['picked']}")
+        print(f"   Objects placed: {self.stats['dropped']}")
+        print(f"   Failed attempts: {self.stats['failed']}")
         
         if self.stats['picked'] + self.stats['failed'] > 0:
             success_rate = self.stats['picked'] / (self.stats['picked'] + self.stats['failed']) * 100
-            print(f"   Başarı oranı: {success_rate:.1f}%")
+            print(f"   Success rate: {success_rate:.1f}%")
         print("="*60)
     
     def cleanup(self):
-        """Simülasyonu kapat"""
+        """Close the simulation."""
         p.disconnect()
-        print("\n✅ PyBullet bağlantısı kapatıldı")
+        print("\n✅ PyBullet connection closed")
 
 
-# ==================== DEMO VE TEST ====================
+# ==================== DEMO AND TEST ====================
 
 def demo_basic():
-    """Temel demo - Manuel test"""
+    """Basic demo - manual test."""
     
-    print("\n🎮 TEMEL DEMO - Manuel Nesne Yakalama\n")
+    print("\n🎮 BASIC DEMO - Manual object grasping\n")
     
-    # Sistemi başlat
+    # Start the system
     system = PyBulletConveyorSystem(gui=True)
     
-    print("\n📦 3 nesne oluşturuluyor...")
+    print("\n📦 Creating 3 objects...")
     
-    # Birkaç nesne oluştur (conveyor üzerinde farklı pozisyonlarda)
+    # Create several objects at different positions on the conveyor
     for i in range(3):
         x_pos = system.conveyor_position[0] - system.conveyor_length/2 + 0.3 + i * 0.3
         y_pos = system.conveyor_position[1]
         z_pos = system.conveyor_position[2] + 0.15
         system.spawn_object([x_pos, y_pos, z_pos])
     
-    print("\n⏳ Nesnelerin durması bekleniyor...")
+    print("\n⏳ Waiting for the objects to settle...")
     for _ in range(120):
         p.stepSimulation()
         time.sleep(1./240.)
     
-    # Her nesneyi sırayla yakala
+    # Grasp each object in sequence
     for cycle in range(3):
         print(f"\n{'='*60}")
-        print(f"DÖNGÜ {cycle + 1}/3")
+        print(f"CYCLE {cycle + 1}/3")
         print(f"{'='*60}")
         
         success = system.run_single_cycle()
         
         if not success:
-            print("⚠️  Bu döngü atlandı, devam ediliyor...")
+            print("⚠️  Skipping this cycle and continuing...")
         
         time.sleep(1)
     
-    # İstatistikler
+    # Statistics
     system.print_statistics()
     
-    print("\n✅ Demo tamamlandı!")
-    print("Pencereyi kapatmak için ENTER'a basın...")
+    print("\n✅ Demo complete!")
+    print("Press ENTER to close the window...")
     input()
     
     system.cleanup()
 
 
 def demo_continuous():
-    """Sürekli döngü demo - Otomatik sistem"""
+    """Continuous loop demo - automated system."""
     
-    print("\n🎮 SÜREKLI DÖNGÜ DEMO - Otomatik Conveyor Sistemi\n")
+    print("\n🎮 CONTINUOUS LOOP DEMO - Automated conveyor system\n")
     
-    # Sistemi başlat
+    # Start the system
     system = PyBulletConveyorSystem(gui=True)
     
     try:
-        # 60 saniye çalıştır
+        # Run for 60 seconds
         system.run_continuous(duration=60, spawn_interval=6)
     
     except KeyboardInterrupt:
-        print("\n\n⚠️  Kullanıcı tarafından durduruldu (Ctrl+C)")
+        print("\n\n⚠️  Stopped by user (Ctrl+C)")
         system.print_statistics()
     
     finally:
-        print("\nPencereyi kapatmak için ENTER'a basın...")
+        print("\nPress ENTER to close the window...")
         input()
         system.cleanup()
 
 
 def demo_interactive():
-    """İnteraktif demo - Kullanıcı kontrolü"""
+    """Interactive demo - user control."""
     
-    print("\n🎮 İNTERAKTİF DEMO\n")
+    print("\n🎮 INTERACTIVE DEMO\n")
     
     system = PyBulletConveyorSystem(gui=True)
     
     print("\nKomutlar:")
-    print("  s - Nesne oluştur (spawn)")
-    print("  p - Tek pick-place döngüsü")
-    print("  h - Home pozisyonuna git")
-    print("  o - Gripper aç")
-    print("  c - Gripper kapat")
-    print("  q - Çıkış")
+    print("  s - Create an object (spawn)")
+    print("  p - Run one pick-and-place cycle")
+    print("  h - Move to the home position")
+    print("  o - Open the gripper")
+    print("  c - Close the gripper")
+    print("  q - Quit")
     print()
     
     try:
         while True:
-            cmd = input("Komut girin: ").lower().strip()
+            cmd = input("Enter a command: ").lower().strip()
             
             if cmd == 's':
                 system.spawn_object()
             
             elif cmd == 'p':
-                # Conveyor'ı biraz çalıştır
-                print("⏳ Band çalışıyor...")
+                # Run the conveyor briefly
+                print("⏳ Conveyor running...")
                 for _ in range(120):
                     system.update_conveyor()
                     p.stepSimulation()
@@ -920,16 +920,16 @@ def demo_interactive():
                 break
             
             else:
-                print("❌ Geçersiz komut!")
+                print("❌ Invalid command!")
             
-            # Simülasyonu biraz ilerlet
+            # Advance the simulation briefly
             for _ in range(10):
                 system.update_conveyor()
                 p.stepSimulation()
                 time.sleep(1./240.)
     
     except KeyboardInterrupt:
-        print("\n\n⚠️  Kullanıcı tarafından durduruldu")
+        print("\n\n⚠️  Stopped by user")
     
     finally:
         system.print_statistics()
@@ -937,26 +937,26 @@ def demo_interactive():
 
 
 def main():
-    """Ana program"""
+    """Main program."""
     
     print("\n" + "="*70)
-    print("🤖 FRANKA PANDA CONVEYOR PICK-PLACE SİSTEMİ")
+    print("🤖 FRANKA PANDA CONVEYOR PICK-AND-PLACE SYSTEM")
     print("="*70)
-    print("\nGELİŞTİRMELER:")
-    print("  ✓ Franka Panda robot (gerçek gripper!)")
-    print("  ✓ Conveyor belt robot'un yanında (çarpışma yok!)")
-    print("  ✓ Daha iyi IK ve hareket kontrolü")
-    print("  ✓ Farklı şekiller (box, cylinder, sphere)")
-    print("  ✓ Gelişmiş gripper kontrolü")
+    print("\nIMPROVEMENTS:")
+    print("  ✓ Franka Panda robot (real gripper!)")
+    print("  ✓ Conveyor belt beside the robot (no collision!)")
+    print("  ✓ Better IK and motion control")
+    print("  ✓ Different shapes (box, cylinder, sphere)")
+    print("  ✓ Improved gripper control")
     print()
-    print("DEMO SEÇENEKLERİ:")
-    print("1. Temel Demo (3 nesne manuel test)")
-    print("2. Sürekli Döngü (60 saniye otomatik)")
-    print("3. İnteraktif Mod (elle kontrol)")
-    print("4. Çıkış")
+    print("DEMO OPTIONS:")
+    print("1. Basic demo (manual test with 3 objects)")
+    print("2. Continuous loop (60 seconds, automated)")
+    print("3. Interactive mode (manual control)")
+    print("4. Exit")
     print("="*70)
     
-    choice = input("\nSeçiminiz (1-4): ")
+    choice = input("\nYour choice (1-4): ")
     
     if choice == '1':
         demo_basic()
@@ -965,9 +965,9 @@ def main():
     elif choice == '3':
         demo_interactive()
     elif choice == '4':
-        print("👋 Görüşürüz!")
+        print("👋 Goodbye!")
     else:
-        print("❌ Geçersiz seçim!")
+        print("❌ Invalid choice!")
 
 
 if __name__ == '__main__':

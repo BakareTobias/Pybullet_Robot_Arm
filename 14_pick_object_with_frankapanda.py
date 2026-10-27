@@ -1,6 +1,6 @@
 """
-DERS 10B: Franka Panda - DÜZELTİLMİŞ VERSİYON
-Gripper doğru pozisyonlanma sorunu çözüldü!
+LESSON 10B: Franka Panda - FIXED VERSION
+The gripper positioning issue has been fixed!
 """
 
 import pybullet as p
@@ -10,32 +10,32 @@ import math
 import numpy as np
 
 print("="*60)
-print("FRANKA PANDA - DÜZELTİLMİŞ GRİPPER KONTROLÜ")
+print("FRANKA PANDA - FIXED GRIPPER CONTROL")
 print("="*60)
 
 # =====================================================
-# KURULUM
+# SETUP
 # =====================================================
 p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -9.81)
 p.loadURDF("plane.urdf")
-print("✓ Simülasyon başladı")
+print("✓ Simulation started")
 
-# Masa
+# Table
 masa_collision = p.createCollisionShape(p.GEOM_BOX, halfExtents=[0.4, 0.4, 0.2])
 masa_visual = p.createVisualShape(p.GEOM_BOX, halfExtents=[0.4, 0.4, 0.2],
                                    rgbaColor=[0.7, 0.5, 0.3, 1])
 masa = p.createMultiBody(baseMass=0, baseCollisionShapeIndex=masa_collision,
                          baseVisualShapeIndex=masa_visual,
                          basePosition=[0.5, 0, 0.2])
-print("✓ Masa eklendi")
+print("✓ Table added")
 
 # Panda robot
 panda = p.loadURDF("franka_panda/panda.urdf", [0, 0, 0], useFixedBase=True)
-print(f"✓ Panda yüklendi (ID: {panda})")
+print(f"✓ Panda loaded (ID: {panda})")
 
-# Kamera
+# Camera
 p.resetDebugVisualizerCamera(
     cameraDistance=1.8,
     cameraYaw=45,
@@ -44,20 +44,20 @@ p.resetDebugVisualizerCamera(
 )
 
 # =====================================================
-# EKLEMLERİ DOĞRU TESPİT ET
+# IDENTIFY THE CORRECT JOINTS
 # =====================================================
 print("\n" + "="*60)
-print("SORUN TESPİTİ VE ÇÖZÜM")
+print("PROBLEM IDENTIFICATION AND SOLUTION")
 print("="*60)
 
 num_joints = p.getNumJoints(panda)
 
-# Manuel olarak doğru eklemleri belirle
-# Panda'da: 0-6 = kol eklemleri, 9-10 = gripper parmakları
-kol_eklemleri = [0, 1, 2, 3, 4, 5, 6]  # 7 eklem
-gripper_eklemleri = [9, 10]             # 2 parmak
+# Manually identify the correct joints
+# On Panda: 0-6 = arm joints, 9-10 = gripper fingers
+kol_eklemleri = [0, 1, 2, 3, 4, 5, 6]  # 7 joints
+gripper_eklemleri = [9, 10]             # 2 fingers
 
-print("\nPanda Eklem Yapısı (Debug):")
+print("\nPanda Joint Structure (Debug):")
 for i in range(num_joints):
     info = p.getJointInfo(panda, i)
     joint_name = info[1].decode('utf-8')
@@ -66,51 +66,51 @@ for i in range(num_joints):
     type_str = {0: "REVOLUTE", 1: "PRISMATIC", 4: "FIXED"}.get(joint_type, "?")
 
     if i in kol_eklemleri:
-        print(f"  {i:2d}: {joint_name:30s} {type_str:10s} ← KOL ✓")
+        print(f"  {i:2d}: {joint_name:30s} {type_str:10s} ← ARM ✓")
     elif i in gripper_eklemleri:
         print(f"  {i:2d}: {joint_name:30s} {type_str:10s} ← GRIPPER ✋")
     else:
         print(f"  {i:2d}: {joint_name:30s} {type_str:10s}")
 
-# End-effector link (gripper tabanı)
+# End-effector link (gripper base)
 end_effector_index = 11
 print(f"\n✓ End-effector link index: {end_effector_index}")
-print(f"✓ Kol eklemleri: {kol_eklemleri}")
-print(f"✓ Gripper eklemleri: {gripper_eklemleri}")
+print(f"✓ Arm joints: {kol_eklemleri}")
+print(f"✓ Gripper joints: {gripper_eklemleri}")
 
 print("\n" + "="*60)
-print("ÇÖZÜM: Tüm Eklemleri Sıfırla ve Test Et")
+print("SOLUTION: Reset and Test All Joints")
 print("="*60)
 
-# Tüm eklemleri sıfırla (home pozisyonu)
-print("\n→ Robot home pozisyonuna getiriliyor...")
-home_angles = [0, -0.785, 0, -2.356, 0, 1.571, 0.785]  # Güzel bir başlangıç pozu
+# Reset all joints (home position)
+print("\n→ Moving robot to home position...")
+home_angles = [0, -0.785, 0, -2.356, 0, 1.571, 0.785]  # A good starting pose
 
 for i, angle in enumerate(home_angles):
     p.resetJointState(panda, kol_eklemleri[i], angle)
 
-# Gripper'ı aç
+# Open the gripper
 for eklem in gripper_eklemleri:
     p.resetJointState(panda, eklem, 0.04)
 
-# Fizik simülasyonunu çalıştır
+# Run the physics simulation
 for _ in range(240):
     p.stepSimulation()
     time.sleep(1./240.)
 
-print("✓ Robot home pozisyonunda")
+print("✓ Robot is in the home position")
 
 # =====================================================
-# DÜZELTİLMİŞ FONKSİYONLAR
+# FIXED FUNCTIONS
 # =====================================================
 
 def kol_hareket_ettir(hedef_pos, hedef_orn=None, sure=2.0):
     """
-    DÜZELTİLMİŞ: Tüm kol eklemlerini doğru kontrol eder
+    FIXED: Correctly controls all arm joints
     """
-    # IK hesapla
+    # Calculate IK
     if hedef_orn is None:
-        # Varsayılan oryantasyon (aşağı bakan)
+        # Default orientation (facing downward)
         hedef_orn = p.getQuaternionFromEuler([math.pi, 0, 0])
 
     ik_result = p.calculateInverseKinematics(
@@ -122,10 +122,10 @@ def kol_hareket_ettir(hedef_pos, hedef_orn=None, sure=2.0):
         residualThreshold=0.001
     )
 
-    # Sadece kol eklemlerinin açılarını al
+    # Get only the arm joint angles
     hedef_acilari = [ik_result[i] for i in kol_eklemleri]
 
-    # Hareket ettir
+    # Move
     adim_sayisi = int(sure * 240)
     for adim in range(adim_sayisi):
         for i, eklem_idx in enumerate(kol_eklemleri):
@@ -142,13 +142,13 @@ def kol_hareket_ettir(hedef_pos, hedef_orn=None, sure=2.0):
         time.sleep(1./240.)
 
 def gripper_kontrol(komut, kuvvet=50):
-    """Gripper kontrolü (değişiklik yok)"""
-    if komut == "ac":
+    """Control the gripper (unchanged)"""
+    if komut == "open":
         hedef = 0.04
-    elif komut == "kapat":
+    elif komut == "close":
         hedef = 0.0
     else:
-        print("⚠ Geçersiz komut!")
+        print("⚠ Invalid command!")
         return
 
     for eklem in gripper_eklemleri:
@@ -164,12 +164,12 @@ def gripper_kontrol(komut, kuvvet=50):
         time.sleep(1./240.)
 
 def end_effector_pos():
-    """End-effector pozisyonu"""
+    """End-effector position"""
     durum = p.getLinkState(panda, end_effector_index)
     return durum[0]
 
 def nesne_olustur(tip, pozisyon, renk, boyut=0.04):
-    """Nesne oluştur"""
+    """Create an object"""
     if tip == "box":
         collision = p.createCollisionShape(p.GEOM_BOX,
                                           halfExtents=[boyut/2, boyut/2, boyut/2])
@@ -188,205 +188,205 @@ def nesne_olustur(tip, pozisyon, renk, boyut=0.04):
     )
     return nesne
 
-# Debug marker (hedef pozisyonu göster)
+# Debug marker (shows the target position)
 def hedef_goster(pos, renk=[0, 1, 0, 0.5]):
-    """Hedef pozisyonu küre ile göster"""
+    """Show the target position with a sphere"""
     gorsel = p.createVisualShape(p.GEOM_SPHERE, radius=0.03, rgbaColor=renk)
     marker = p.createMultiBody(0, baseVisualShapeIndex=gorsel, basePosition=pos)
     return marker
 
 # =====================================================
-# TEST 1: Manuel Pozisyon Kontrolü
+# TEST 1: Manual Position Control
 # =====================================================
 print("\n" + "="*60)
-print("TEST 1: Manuel Pozisyon Kontrolü (Debug)")
+print("TEST 1: Manual Position Control (Debug)")
 print("="*60)
 
-print("\n→ Gripper'ı aç")
-gripper_kontrol("ac")
+print("\n→ Open the gripper")
+gripper_kontrol("open")
 
-# Test pozisyonu
+# Test position
 test_pos = [0.5, 0.2, 0.5]
-print(f"\n→ Test pozisyonuna git: {test_pos}")
-hedef_goster(test_pos, [1, 0, 0, 0.7])  # Kırmızı marker
+print(f"\n→ Move to test position: {test_pos}")
+hedef_goster(test_pos, [1, 0, 0, 0.7])  # Red marker
 
 kol_hareket_ettir(test_pos, sure=3.0)
 
-# Gerçek pozisyonu kontrol et
+# Check the actual position
 gercek_pos = end_effector_pos()
-print(f"\n✓ Hedef pozisyon : {test_pos}")
-print(f"✓ Gerçek pozisyon: [{gercek_pos[0]:.3f}, {gercek_pos[1]:.3f}, {gercek_pos[2]:.3f}]")
+print(f"\n✓ Target position: {test_pos}")
+print(f"✓ Actual position: [{gercek_pos[0]:.3f}, {gercek_pos[1]:.3f}, {gercek_pos[2]:.3f}]")
 
 hata = math.sqrt(sum([(test_pos[i]-gercek_pos[i])**2 for i in range(3)]))
-print(f"✓ Pozisyon hatası: {hata*100:.2f} cm")
+print(f"✓ Position error: {hata*100:.2f} cm")
 
 if hata < 0.05:
-    print("  ✓✓ MÜKEMMEL! Pozisyonlama doğru çalışıyor!")
+    print("  ✓✓ EXCELLENT! Positioning is working correctly!")
 else:
-    print(f"  ⚠ Hata biraz büyük ama kabul edilebilir")
+    print(f"  ⚠ The error is a little large but acceptable")
 
-input("\nDevam için ENTER...\n")
+input("\nPress ENTER to continue...\n")
 
 # =====================================================
-# TEST 2: Gripper Kapama Testi
+# TEST 2: Gripper Open/Close Test
 # =====================================================
 print("="*60)
-print("TEST 2: Gripper Açma/Kapama")
+print("TEST 2: Opening/Closing the Gripper")
 print("="*60)
 
-print("\n→ Gripper'ı KAPAT")
-gripper_kontrol("kapat", kuvvet=50)
-print("  ✓ Kapatıldı")
+print("\n→ CLOSE the gripper")
+gripper_kontrol("close", kuvvet=50)
+print("  ✓ Closed")
 
 time.sleep(1)
 
-print("\n→ Gripper'ı AÇ")
-gripper_kontrol("ac")
-print("  ✓ Açıldı")
+print("\n→ OPEN the gripper")
+gripper_kontrol("open")
+print("  ✓ Opened")
 
-input("\nDevam için ENTER...\n")
+input("\nPress ENTER to continue...\n")
 
 # =====================================================
-# TEST 3: Nesne Oluştur ve Pick Test
+# TEST 3: Create an Object and Test Picking
 # =====================================================
 print("="*60)
-print("TEST 3: Gerçek Pick Testi")
+print("TEST 3: Real Pick Test")
 print("="*60)
 
-# Tek bir küp oluştur
-print("\n→ Test küpü oluşturuluyor...")
+# Create a single cube
+print("\n→ Creating a test cube...")
 test_kutu = nesne_olustur("box", [0.5, 0.1, 0.45], [1, 0, 0, 1], boyut=0.04)
-print(f"  ✓ Kırmızı küp oluşturuldu (ID: {test_kutu})")
+print(f"  ✓ Red cube created (ID: {test_kutu})")
 
-# Düşmesini bekle
+# Wait for it to fall
 for _ in range(120):
     p.stepSimulation()
     time.sleep(1./240.)
 
-# Küpün gerçek pozisyonunu al
+# Get the cube's actual position
 kutu_pos, _ = p.getBasePositionAndOrientation(test_kutu)
-print(f"  ✓ Küp pozisyonu: [{kutu_pos[0]:.3f}, {kutu_pos[1]:.3f}, {kutu_pos[2]:.3f}]")
+print(f"  ✓ Cube position: [{kutu_pos[0]:.3f}, {kutu_pos[1]:.3f}, {kutu_pos[2]:.3f}]")
 
-print("\n→ PICK İŞLEMİ BAŞLIYOR...")
+print("\n→ PICK OPERATION STARTING...")
 
-# ADIM 1: Gripper'ı aç
-print("  1. Gripper açılıyor...")
-gripper_kontrol("ac")
+# STEP 1: Open the gripper
+print("  1. Opening the gripper...")
+gripper_kontrol("open")
 
-# ADIM 2: Küpün üstüne git
-print("  2. Küpün üstüne gidiliyor...")
+# STEP 2: Move above the cube
+print("  2. Moving above the cube...")
 ustte = [kutu_pos[0], kutu_pos[1], kutu_pos[2] + 0.2]
 hedef_goster(ustte, [0, 1, 1, 0.5])
 kol_hareket_ettir(ustte, sure=2.5)
 
-# Pozisyonu kontrol et
+# Check the position
 ee_pos = end_effector_pos()
 print(f"     End-effector: [{ee_pos[0]:.3f}, {ee_pos[1]:.3f}, {ee_pos[2]:.3f}]")
 
-# ADIM 3: Yavaşça in
-print("  3. Küpe yaklaşılıyor...")
+# STEP 3: Descend slowly
+print("  3. Moving toward the cube...")
 yakin = [kutu_pos[0], kutu_pos[1], kutu_pos[2]]
 hedef_goster(yakin, [1, 1, 0, 0.5])
 kol_hareket_ettir(yakin, sure=2.0)
 
-# Son pozisyon kontrolü
+# Check the final position
 ee_pos = end_effector_pos()
 mesafe = math.sqrt(
     (ee_pos[0]-kutu_pos[0])**2 +
     (ee_pos[1]-kutu_pos[1])**2 +
     (ee_pos[2]-kutu_pos[2])**2
 )
-print(f"     End-effector ile küp arası mesafe: {mesafe*100:.2f} cm")
+print(f"     Distance between end-effector and cube: {mesafe*100:.2f} cm")
 
-# ADIM 4: Kapat
-print("  4. Gripper kapatılıyor...")
-gripper_kontrol("kapat", kuvvet=100)
+# STEP 4: Close
+print("  4. Closing the gripper...")
+gripper_kontrol("close", kuvvet=100)
 
-# Biraz bekle
+# Wait briefly
 time.sleep(0.5)
 
-# ADIM 5: Yukarı kaldır
-print("  5. Yukarı kaldırılıyor...")
+# STEP 5: Lift upward
+print("  5. Lifting upward...")
 yukari = [kutu_pos[0], kutu_pos[1], kutu_pos[2] + 0.3]
 kol_hareket_ettir(yukari, sure=2.0)
 
-# Küp havada mı kontrol et
+# Check whether the cube is in the air
 yeni_kutu_pos, _ = p.getBasePositionAndOrientation(test_kutu)
 kaldirma_mesafesi = yeni_kutu_pos[2] - kutu_pos[2]
 
-print(f"\n✓ Kaldırma mesafesi: {kaldirma_mesafesi*100:.1f} cm")
+print(f"\n✓ Lift distance: {kaldirma_mesafesi*100:.1f} cm")
 
 if kaldirma_mesafesi > 0.15:
-    print("  ✓✓ BAŞARILI! Küp tutuldu ve kaldırıldı! 🎉")
+    print("  ✓✓ SUCCESS! The cube was grasped and lifted! 🎉")
 
-    # ADIM 6: Yeni yere taşı
-    print("\n  6. Yeni pozisyona taşınıyor...")
+    # STEP 6: Move it to a new location
+    print("\n  6. Moving to a new position...")
     hedef_yeni = [0.3, -0.2, 0.5]
     kol_hareket_ettir(hedef_yeni, sure=2.5)
 
-    # ADIM 7: Bırak
-    print("  7. Küp bırakılıyor...")
-    gripper_kontrol("ac")
+    # STEP 7: Release
+    print("  7. Releasing the cube...")
+    gripper_kontrol("open")
 
-    # Düşmesi için bekle
+    # Wait for it to fall
     for _ in range(180):
         p.stepSimulation()
         time.sleep(1./240.)
 
     final_pos, _ = p.getBasePositionAndOrientation(test_kutu)
-    print(f"\n✓ Küp başarıyla taşındı!")
-    print(f"  Başlangıç: [{kutu_pos[0]:.2f}, {kutu_pos[1]:.2f}, {kutu_pos[2]:.2f}]")
-    print(f"  Son:       [{final_pos[0]:.2f}, {final_pos[1]:.2f}, {final_pos[2]:.2f}]")
+    print(f"\n✓ Cube moved successfully!")
+    print(f"  Start: [{kutu_pos[0]:.2f}, {kutu_pos[1]:.2f}, {kutu_pos[2]:.2f}]")
+    print(f"  End:   [{final_pos[0]:.2f}, {final_pos[1]:.2f}, {final_pos[2]:.2f}]")
 
 else:
-    print("  ✗ Küp tutulamadı. Sorun devam ediyor...")
-    print(f"    Debug: Küp sadece {kaldirma_mesafesi*100:.1f} cm kalktı")
+    print("  ✗ The cube could not be grasped. The problem persists...")
+    print(f"    Debug: The cube lifted only {kaldirma_mesafesi*100:.1f} cm")
 
-input("\nDevam için ENTER...\n")
+input("\nPress ENTER to continue...\n")
 
 # =====================================================
-# TEST 4: Çoklu Nesne Pick-and-Place
+# TEST 4: Multi-Object Pick-and-Place
 # =====================================================
 print("="*60)
-print("TEST 4: Çoklu Nesne Testi")
+print("TEST 4: Multi-Object Test")
 print("="*60)
 
-# 3 nesne oluştur
+# Create 3 objects
 nesneler = []
-print("\n→ Nesneler oluşturuluyor...")
+print("\n→ Creating objects...")
 
 nesne1 = nesne_olustur("box", [0.55, 0.15, 0.45], [1, 0, 0, 1], boyut=0.04)
 nesneler.append(nesne1)
-print(f"  ✓ Kırmızı küp")
+print(f"  ✓ Red cube")
 
 nesne2 = nesne_olustur("box", [0.55, 0.0, 0.45], [0, 1, 0, 1], boyut=0.04)
 nesneler.append(nesne2)
-print(f"  ✓ Yeşil küp")
+print(f"  ✓ Green cube")
 
 nesne3 = nesne_olustur("box", [0.55, -0.15, 0.45], [0, 0, 1, 1], boyut=0.04)
 nesneler.append(nesne3)
-print(f"  ✓ Mavi küp")
+print(f"  ✓ Blue cube")
 
-# Düşmelerini bekle
+# Wait for them to fall
 for _ in range(180):
     p.stepSimulation()
     time.sleep(1./240.)
 
-print("\n→ Nesneler toplanıyor...")
+print("\n→ Picking up objects...")
 
 hedef_merkez = [0.25, 0.0, 0.43]
 
 for idx, nesne in enumerate(nesneler):
-    print(f"\n  Nesne {idx+1}/3 işleniyor...")
+    print(f"\n  Processing object {idx+1}/3...")
 
-    # Nesne pozisyonu
+    # Object position
     pos, _ = p.getBasePositionAndOrientation(nesne)
 
     # Pick
-    gripper_kontrol("ac")
+    gripper_kontrol("open")
     kol_hareket_ettir([pos[0], pos[1], pos[2] + 0.2], sure=2.0)
     kol_hareket_ettir([pos[0], pos[1], pos[2]], sure=1.5)
-    gripper_kontrol("kapat", kuvvet=100)
+    gripper_kontrol("close", kuvvet=100)
     time.sleep(0.3)
     kol_hareket_ettir([pos[0], pos[1], pos[2] + 0.25], sure=1.5)
 
@@ -395,45 +395,45 @@ for idx, nesne in enumerate(nesneler):
     hedef = [hedef_merkez[0], hedef_merkez[1] + offset, hedef_merkez[2] + 0.25]
     kol_hareket_ettir(hedef, sure=2.0)
     kol_hareket_ettir([hedef[0], hedef[1], hedef_merkez[2] + 0.05], sure=1.0)
-    gripper_kontrol("ac")
+    gripper_kontrol("open")
 
     for _ in range(60):
         p.stepSimulation()
         time.sleep(1./240.)
 
-    print(f"    ✓ Nesne {idx+1} toplandı")
+    print(f"    ✓ Object {idx+1} picked up")
 
-print("\n✓✓ TÜM NESNELER BAŞARIYLA TOPLANDI! 🎉")
+print("\n✓✓ ALL OBJECTS PICKED UP SUCCESSFULLY! 🎉")
 
 # =====================================================
-# ÖZET
+# SUMMARY
 # =====================================================
 print("\n" + "="*60)
-print("SORUN ÇÖZÜLDÜ - ÖZET")
+print("PROBLEM SOLVED - SUMMARY")
 print("="*60)
 print("""
-SORUN NEYDİ:
-  ✗ IK sonucu yanlış eklemlere gidiyordu
-  ✗ End-effector indeksi yanlıştı
-  ✗ Gripper pozisyonlanamıyordu
+THE PROBLEM:
+  ✗ IK results were being applied to the wrong joints
+  ✗ The end-effector index was incorrect
+  ✗ The gripper could not be positioned
 
-ÇÖZÜM:
-  ✓ Kol eklemleri manuel belirlendi: [0,1,2,3,4,5,6]
-  ✓ Gripper eklemleri: [9,10]
+SOLUTION:
+  ✓ Arm joints identified manually: [0,1,2,3,4,5,6]
+  ✓ Gripper joints: [9,10]
   ✓ End-effector index: 11
-  ✓ IK sonucu sadece kol eklemlerine uygulandı
-  ✓ Oryantasyon eklendi (aşağı bakan gripper)
+  ✓ IK results applied only to the arm joints
+  ✓ Orientation added (downward-facing gripper)
 
-SONUÇ:
-  ✓✓ Gripper artık doğru pozisyonlanıyor
-  ✓✓ Nesneler başarıyla tutuluyor
-  ✓✓ Pick-and-place çalışıyor
+RESULT:
+  ✓✓ The gripper is now positioned correctly
+  ✓✓ Objects are being grasped successfully
+  ✓✓ Pick-and-place is working
 
-SONRAKİ ADIM:
-  → PROJE 1: Renk Tanıma + Sınıflandırma
+NEXT STEP:
+  → PROJECT 1: Color Recognition + Classification
 """)
 
-input("\nTest tamamlandı! ENTER'a basın...\n")
+input("\nTest complete! Press ENTER...\n")
 
 p.disconnect()
-print("✓ PyBullet kapatıldı")
+print("✓ PyBullet disconnected")

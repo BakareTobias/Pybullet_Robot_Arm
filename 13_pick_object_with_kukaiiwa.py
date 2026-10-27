@@ -1,6 +1,6 @@
 """
-DERS 10: Gripper Kontrolü ve Nesne Yönetimi
-Pick-and-place için temel beceriler
+LESSON 10: Gripper Control and Object Management
+Basic skills for pick-and-place
 """
 
 import pybullet as p
@@ -10,53 +10,53 @@ import math
 import numpy as np
 
 print("="*60)
-print("DERS 10: GRIPPER VE NESNE YÖNETİMİ")
+print("LESSON 10: GRIPPER AND OBJECT MANAGEMENT")
 print("="*60)
 
 # =====================================================
-# BÖLÜM 1: Gripper Nedir?
+# SECTION 1: What Is a Gripper?
 # =====================================================
-print("\nBÖLÜM 1: Gripper (Tutucu) Kavramı")
+print("\nSECTION 1: The Gripper Concept")
 print("-"*60)
 print("""
-Gripper: Robot elinin ucundaki tutma mekanizması
+Gripper: A gripping mechanism at the end of a robot arm
 
-Çeşitleri:
-  1. Paralel Gripper (En yaygın)
-     └─┬─┘  Kapalı
-     └───┘  Açık
+Types:
+  1. Parallel gripper (most common)
+     └─┬─┘  Closed
+     └───┘  Open
 
-  2. Vakumlu Gripper (Emme ile)
-  3. Çok parmaklı (İnsansı el)
-  4. Mıknatıslı (Metal nesneler için)
+  2. Vacuum gripper (suction)
+  3. Multi-finger gripper (humanoid hand)
+  4. Magnetic gripper (for metal objects)
 
-Kuka robotun gripper'ı:
-  - 2 parmak (paralel)
-  - Açma/kapama hareketi
-  - Kuvvet kontrolü
+The Kuka robot's gripper:
+  - 2 fingers (parallel)
+  - Opening/closing motion
+  - Force control
 """)
 
-input("Devam için ENTER'a basın...\n")
+input("Press ENTER to continue...\n")
 
 # =====================================================
-# BÖLÜM 2: Simülasyon Kurulumu
+# SECTION 2: Simulation Setup
 # =====================================================
 print("="*60)
-print("BÖLÜM 2: Ortamı Hazırlama")
+print("SECTION 2: Preparing the Environment")
 print("="*60)
 
-# Simülasyon başlat
+# Start the simulation
 p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -9.81)
 p.loadURDF("plane.urdf")
-print("✓ Simülasyon başladı")
+print("✓ Simulation started")
 
-# Robot yükle
+# Load the robot
 robot = p.loadURDF("kuka_iiwa/model.urdf", [0, 0, 0], useFixedBase=True)
-print("✓ Kuka robot yüklendi")
+print("✓ Kuka robot loaded")
 
-# Kamera
+# Camera
 p.resetDebugVisualizerCamera(
     cameraDistance=1.5,
     cameraYaw=45,
@@ -64,54 +64,54 @@ p.resetDebugVisualizerCamera(
     cameraTargetPosition=[0.3, 0, 0.3]
 )
 
-# Robot eklemlerini tanı
+# Inspect the robot joints
 num_joints = p.getNumJoints(robot)
-print(f"✓ Robot'un {num_joints} eklemi var")
+print(f"✓ The robot has {num_joints} joints")
 
-print("\nEklem bilgileri:")
+print("\nJoint information:")
 for i in range(num_joints):
     info = p.getJointInfo(robot, i)
     joint_name = info[1].decode('utf-8')
     joint_type = info[2]
     print(f"  {i}: {joint_name} (Tip: {joint_type})")
 
-# Gripper eklemlerini bul (genelde son 2 eklem)
-# Kuka'da gripper yok ama end-effector var
-# Basit bir gripper mekanizması simüle edeceğiz
+# Find gripper joints (usually the last 2 joints)
+# The Kuka has no gripper, but it does have an end effector
+# We will simulate a simple gripper mechanism
 
-print("\nNot: Kuka modeli gripper içermiyor.")
-print("     Basit bir tutma mekanizması simüle edeceğiz.")
+print("\nNote: The Kuka model does not include a gripper.")
+print("     We will simulate a simple gripping mechanism.")
 
-input("\nDevam için ENTER'a basın...\n")
+input("\nPress ENTER to continue...\n")
 
 # =====================================================
-# BÖLÜM 3: Nesne Oluşturma
+# SECTION 3: Creating Objects
 # =====================================================
 print("="*60)
-print("BÖLÜM 3: Simülasyonda Nesne Oluşturma")
+print("SECTION 3: Creating Objects in the Simulation")
 print("="*60)
 
-print("\n3 farklı nesne türü oluşturacağız:")
-print("  1. Küp (Box)")
-print("  2. Küre (Sphere)")
-print("  3. Silindir (Cylinder)\n")
+print("\nWe will create 3 different types of objects:")
+print("  1. Cube (Box)")
+print("  2. Sphere")
+print("  3. Cylinder\n")
 
-# Yardımcı fonksiyon: Nesne oluştur
+# Helper function: create an object
 def nesne_olustur(tip, pozisyon, renk, boyut=0.05):
     """
-    Simülasyonda nesne oluştur
+    Create an object in the simulation.
 
-    Parametreler:
+    Parameters:
         tip: "box", "sphere", "cylinder"
         pozisyon: [x, y, z]
         renk: [r, g, b, a]
-        boyut: Nesne boyutu (metre)
+        boyut: Object size (meters)
 
-    Döndürür:
-        nesne_id: PyBullet nesne ID'si
+    Returns:
+        nesne_id: PyBullet object ID
     """
     if tip == "box":
-        # Küp
+        # Cube
         collision_shape = p.createCollisionShape(
             p.GEOM_BOX,
             halfExtents=[boyut/2, boyut/2, boyut/2]
@@ -123,7 +123,7 @@ def nesne_olustur(tip, pozisyon, renk, boyut=0.05):
         )
 
     elif tip == "sphere":
-        # Küre
+        # Sphere
         collision_shape = p.createCollisionShape(
             p.GEOM_SPHERE,
             radius=boyut/2
@@ -135,7 +135,7 @@ def nesne_olustur(tip, pozisyon, renk, boyut=0.05):
         )
 
     elif tip == "cylinder":
-        # Silindir
+        # Cylinder
         collision_shape = p.createCollisionShape(
             p.GEOM_CYLINDER,
             radius=boyut/2,
@@ -148,9 +148,9 @@ def nesne_olustur(tip, pozisyon, renk, boyut=0.05):
             rgbaColor=renk
         )
 
-    # Nesneyi oluştur
+    # Create the object
     nesne_id = p.createMultiBody(
-        baseMass=0.05,  # Hafif (50 gram)
+        baseMass=0.05,  # Lightweight (50 grams)
         baseCollisionShapeIndex=collision_shape,
         baseVisualShapeIndex=visual_shape,
         basePosition=pozisyon
@@ -158,67 +158,67 @@ def nesne_olustur(tip, pozisyon, renk, boyut=0.05):
 
     return nesne_id
 
-# Test: 3 farklı nesne oluştur
-print("→ Nesneler oluşturuluyor...")
+# Test: create 3 different objects
+print("→ Creating objects...")
 
 kutu1 = nesne_olustur("box", [0.4, 0.2, 0.3], [1, 0, 0, 1], boyut=0.05)
-print(f"  ✓ Kırmızı küp oluşturuldu (ID: {kutu1})")
+print(f"  ✓ Red cube created (ID: {kutu1})")
 
 kutu2 = nesne_olustur("sphere", [0.4, 0.0, 0.3], [0, 0, 1, 1], boyut=0.05)
-print(f"  ✓ Mavi küre oluşturuldu (ID: {kutu2})")
+print(f"  ✓ Blue sphere created (ID: {kutu2})")
 
 kutu3 = nesne_olustur("cylinder", [0.4, -0.2, 0.3], [0, 1, 0, 1], boyut=0.05)
-print(f"  ✓ Yeşil silindir oluşturuldu (ID: {kutu3})")
+print(f"  ✓ Green cylinder created (ID: {kutu3})")
 
-# Düşmeleri bekle
-print("\n→ Nesneler düşüyor...")
+# Wait for the objects to fall
+print("\n→ Objects are falling...")
 for _ in range(240):
     p.stepSimulation()
     time.sleep(1./240.)
 
-print("✓ Nesneler zemine düştü")
+print("✓ Objects have fallen to the ground")
 
-input("\nDevam için ENTER'a basın...\n")
+input("\nPress ENTER to continue...\n")
 
 # =====================================================
-# BÖLÜM 4: Nesne Bilgilerini Okuma
+# SECTION 4: Reading Object Information
 # =====================================================
 print("="*60)
-print("BÖLÜM 4: Nesne Pozisyonunu Okuma")
+print("SECTION 4: Reading Object Positions")
 print("="*60)
 
 def nesne_pozisyonu_oku(nesne_id):
-    """Nesnenin pozisyonunu ve oryantasyonunu oku"""
+    """Read the object's position and orientation."""
     pos, orn = p.getBasePositionAndOrientation(nesne_id)
     return pos, orn
 
-print("\nMevcut nesne pozisyonları:")
+print("\nCurrent object positions:")
 for idx, nesne in enumerate([kutu1, kutu2, kutu3], 1):
     pos, _ = nesne_pozisyonu_oku(nesne)
-    print(f"  Nesne {idx}: ({pos[0]:.3f}, {pos[1]:.3f}, {pos[2]:.3f})")
+    print(f"  Object {idx}: ({pos[0]:.3f}, {pos[1]:.3f}, {pos[2]:.3f})")
 
-input("\nDevam için ENTER'a basın...\n")
+input("\nPress ENTER to continue...\n")
 
 # =====================================================
-# BÖLÜM 5: Basit "Tutma" Mekanizması
+# SECTION 5: Simple "Grasping" Mechanism
 # =====================================================
 print("="*60)
-print("BÖLÜM 5: Basit Tutma Mekanizması")
+print("SECTION 5: Simple Grasping Mechanism")
 print("="*60)
 
 print("""
-Gerçek gripper simülasyonu karmaşıktır. Basit bir yöntem:
+Simulating a real gripper is complex. Here is a simple method:
 
-CONSTRAINT (Kısıtlama) Kullanma:
-  - Robot end-effector'a çok yaklaşınca
-  - Nesneyi end-effector'a "yapıştır" (sanal bağlantı)
-  - Böylece robot hareket edince nesne de hareket eder
-  - Bırakmak için: Bağlantıyı kaldır
+Use a CONSTRAINT:
+  - When the robot gets close to the end effector
+  - "Attach" the object to the end effector (virtual connection)
+  - This makes the object move with the robot
+  - To release: remove the connection
 
-Bu yönteme "Kinematic Grasping" denir.
+This method is called "Kinematic Grasping".
 """)
 
-# Yardımcı fonksiyonlar
+# Helper functions
 def eklem_hareket_ettir(eklem_no, aci):
     p.setJointMotorControl2(
         robot, eklem_no,
@@ -231,7 +231,7 @@ def ik_hesapla(x, y, z):
     return p.calculateInverseKinematics(robot, 6, [x, y, z])
 
 def robot_hareket_ettir(hedef_pos, sure=2.0):
-    """Robot'u hedef pozisyona götür (trajectory ile)"""
+    """Move the robot to the target position (using a trajectory)."""
     eklem_acilari = ik_hesapla(*hedef_pos)
 
     adim_sayisi = int(sure * 240)
@@ -242,231 +242,231 @@ def robot_hareket_ettir(hedef_pos, sure=2.0):
         time.sleep(1./240.)
 
 def end_effector_pozisyonu():
-    """End-effector'ın mevcut pozisyonu"""
+    """Return the current position of the end effector."""
     durum = p.getLinkState(robot, 6)
     return durum[0]
 
-# Tutma/Bırakma için global değişken
+# Global variables for grasping/releasing
 tutulan_nesne = None
 constraint_id = None
 
 def nesne_tut(nesne_id):
     """
-    Nesneyi tut (constraint oluştur)
+    Grasp an object (create a constraint).
     """
     global tutulan_nesne, constraint_id
 
     if tutulan_nesne is not None:
-        print("  ⚠ Zaten bir nesne tutuyorsunuz!")
+        print("  ⚠ You are already holding an object!")
         return False
 
-    # End-effector pozisyonu
+    # End-effector position
     ee_pos = end_effector_pozisyonu()
 
-    # Nesne pozisyonu
+    # Object position
     nesne_pos, _ = nesne_pozisyonu_oku(nesne_id)
 
-    # Mesafe kontrolü
+    # Check the distance
     mesafe = math.sqrt(
         (ee_pos[0]-nesne_pos[0])**2 +
         (ee_pos[1]-nesne_pos[1])**2 +
         (ee_pos[2]-nesne_pos[2])**2
     )
 
-    if mesafe > 0.15:  # 15 cm'den uzaksa tutamaz
-        print(f"  ✗ Nesne çok uzak! Mesafe: {mesafe*100:.1f}cm")
+    if mesafe > 0.15:  # Cannot grasp if farther than 15 cm
+        print(f"  ✗ Object is too far away! Distance: {mesafe*100:.1f}cm")
         return False
 
-    # Constraint (bağlantı) oluştur
+    # Create a constraint (connection)
     constraint_id = p.createConstraint(
         parentBodyUniqueId=robot,
-        parentLinkIndex=6,  # End-effector
+        parentLinkIndex=6,  # End effector
         childBodyUniqueId=nesne_id,
         childLinkIndex=-1,
-        jointType=p.JOINT_FIXED,  # Sabit bağlantı
+        jointType=p.JOINT_FIXED,  # Fixed connection
         jointAxis=[0, 0, 0],
         parentFramePosition=[0, 0, 0],
         childFramePosition=[0, 0, 0]
     )
 
     tutulan_nesne = nesne_id
-    print(f"  ✓ Nesne tutuldu! (Constraint ID: {constraint_id})")
+    print(f"  ✓ Object grasped! (Constraint ID: {constraint_id})")
     return True
 
 def nesne_birak():
     """
-    Tutulan nesneyi bırak (constraint kaldır)
+    Release the held object (remove the constraint).
     """
     global tutulan_nesne, constraint_id
 
     if tutulan_nesne is None:
-        print("  ⚠ Elinizde nesne yok!")
+        print("  ⚠ You are not holding an object!")
         return False
 
-    # Constraint'i kaldır
+    # Remove the constraint
     p.removeConstraint(constraint_id)
 
-    print(f"  ✓ Nesne bırakıldı!")
+    print(f"  ✓ Object released!")
     tutulan_nesne = None
     constraint_id = None
     return True
 
-input("Devam için ENTER'a basın...\n")
+input("Press ENTER to continue...\n")
 
 # =====================================================
-# TEST 1: Basit Pick and Place
+# TEST 1: Basic Pick and Place
 # =====================================================
 print("="*60)
-print("TEST 1: Basit Pick and Place")
+print("TEST 1: Basic Pick and Place")
 print("="*60)
 
-# Kırmızı küpü al
-print("\n→ ADIM 1: Kırmızı küpün üstüne git")
+# Pick up the red cube
+print("\n→ STEP 1: Move above the red cube")
 kutu1_pos, _ = nesne_pozisyonu_oku(kutu1)
 hedef_ustte = [kutu1_pos[0], kutu1_pos[1], kutu1_pos[2] + 0.2]
 robot_hareket_ettir(hedef_ustte, sure=2.0)
-print("  ✓ Üstte")
+print("  ✓ Above it")
 
-print("\n→ ADIM 2: Küpün seviyesine in")
+print("\n→ STEP 2: Move down to the cube's level")
 hedef_yakin = [kutu1_pos[0], kutu1_pos[1], kutu1_pos[2] + 0.05]
 robot_hareket_ettir(hedef_yakin, sure=1.5)
-print("  ✓ Küpe yaklaştı")
+print("  ✓ Near the cube")
 
-print("\n→ ADIM 3: Küpü tut")
+print("\n→ STEP 3: Grasp the cube")
 nesne_tut(kutu1)
 time.sleep(0.5)
 
-print("\n→ ADIM 4: Yukarı kaldır")
+print("\n→ STEP 4: Lift it")
 hedef_yukari = [kutu1_pos[0], kutu1_pos[1], kutu1_pos[2] + 0.3]
 robot_hareket_ettir(hedef_yukari, sure=1.5)
-print("  ✓ Küp havada!")
+print("  ✓ Cube is in the air!")
 
-print("\n→ ADIM 5: Yeni pozisyona taşı")
+print("\n→ STEP 5: Move it to a new position")
 yeni_pos = [0.2, -0.3, 0.3]
 robot_hareket_ettir(yeni_pos, sure=2.0)
-print("  ✓ Yeni pozisyonda")
+print("  ✓ At the new position")
 
-print("\n→ ADIM 6: Küpü bırak")
+print("\n→ STEP 6: Release the cube")
 nesne_birak()
 
-# Biraz düşmesi için bekle
+# Wait for it to fall a little
 for _ in range(120):
     p.stepSimulation()
     time.sleep(1./240.)
 
-print("  ✓ Küp bırakıldı ve düştü")
+print("  ✓ Cube released and fell")
 
-# Final pozisyonu kontrol et
+# Check the final position
 final_pos, _ = nesne_pozisyonu_oku(kutu1)
-print(f"\nKırmızı küp taşındı:")
-print(f"  Başlangıç: ({kutu1_pos[0]:.2f}, {kutu1_pos[1]:.2f}, {kutu1_pos[2]:.2f})")
-print(f"  Son      : ({final_pos[0]:.2f}, {final_pos[1]:.2f}, {final_pos[2]:.2f})")
+print(f"\nRed cube moved:")
+print(f"  Start: ({kutu1_pos[0]:.2f}, {kutu1_pos[1]:.2f}, {kutu1_pos[2]:.2f})")
+print(f"  End  : ({final_pos[0]:.2f}, {final_pos[1]:.2f}, {final_pos[2]:.2f})")
 
-input("\n✓ TEST 1 tamamlandı! Devam için ENTER...\n")
+input("\n✓ TEST 1 complete! Press ENTER to continue...\n")
 
 # =====================================================
-# TEST 2: Tüm Nesneleri Toplama
+# TEST 2: Collecting All Objects
 # =====================================================
 print("="*60)
-print("TEST 2: Tüm Nesneleri Bir Araya Toplama")
+print("TEST 2: Gathering All Objects Together")
 print("="*60)
 
-hedef_alan = [0.0, 0.0, 0.05]  # Merkeze topla
+hedef_alan = [0.0, 0.0, 0.05]  # Gather at the center
 
 nesneler = [kutu1, kutu2, kutu3]
-renkler = ["Kırmızı", "Mavi", "Yeşil"]
+renkler = ["Red", "Blue", "Green"]
 
 for idx, (nesne, renk) in enumerate(zip(nesneler, renkler)):
-    print(f"\n→ {renk} nesneyi topluyorum...")
+    print(f"\n→ Gathering the {renk.lower()} object...")
 
-    # Nesne pozisyonu
+    # Object position
     pos, _ = nesne_pozisyonu_oku(nesne)
 
-    # Üste git
-    print("  - Üste gidiliyor...")
+    # Move above it
+    print("  - Moving above it...")
     robot_hareket_ettir([pos[0], pos[1], pos[2] + 0.25], sure=1.5)
 
-    # İn
-    print("  - İniliyor...")
+    # Move down
+    print("  - Moving down...")
     robot_hareket_ettir([pos[0], pos[1], pos[2] + 0.05], sure=1.0)
 
-    # Tut
-    print("  - Tutuluyor...")
+    # Grasp
+    print("  - Grasping...")
     if nesne_tut(nesne):
-        # Kaldır
-        print("  - Kaldırılıyor...")
+        # Lift
+        print("  - Lifting...")
         robot_hareket_ettir([pos[0], pos[1], pos[2] + 0.3], sure=1.0)
 
-        # Hedef alana taşı
-        print("  - Hedefe taşınıyor...")
-        offset_x = idx * 0.08  # Yan yana diz
+        # Move to the target area
+        print("  - Moving to the target...")
+        offset_x = idx * 0.08  # Arrange side by side
         robot_hareket_ettir([hedef_alan[0] + offset_x, hedef_alan[1], 0.3], sure=1.5)
 
-        # Bırak
-        print("  - Bırakılıyor...")
+        # Release
+        print("  - Releasing...")
         robot_hareket_ettir([hedef_alan[0] + offset_x, hedef_alan[1], 0.15], sure=0.8)
         nesne_birak()
 
-        # Düşmesi için bekle
+        # Wait for it to fall
         for _ in range(60):
             p.stepSimulation()
             time.sleep(1./240.)
 
-        print(f"  ✓ {renk} nesne toplandı!")
+        print(f"  ✓ {renk} object gathered!")
     else:
-        print(f"  ✗ {renk} nesne tutulamadı")
+        print(f"  ✗ Could not grasp the {renk.lower()} object")
 
-print("\n✓ Tüm nesneler toplandı!")
+print("\n✓ All objects gathered!")
 
 # =====================================================
-# ÖZET
+# SUMMARY
 # =====================================================
 print("\n" + "="*60)
-print("DERS 10 ÖZET")
+print("LESSON 10 SUMMARY")
 print("="*60)
 print("""
-ÖĞRENDİKLERİMİZ:
-✓ Gripper kavramı
-✓ Nesne oluşturma (createCollisionShape + createVisualShape)
-✓ Nesne pozisyonu okuma (getBasePositionAndOrientation)
-✓ Constraint ile tutma (createConstraint)
-✓ Constraint kaldırarak bırakma (removeConstraint)
-✓ Basit pick-and-place işlemi
+WHAT WE LEARNED:
+✓ The gripper concept
+✓ Creating objects (createCollisionShape + createVisualShape)
+✓ Reading object positions (getBasePositionAndOrientation)
+✓ Grasping with a constraint (createConstraint)
+✓ Releasing by removing a constraint (removeConstraint)
+✓ A basic pick-and-place operation
 
-ÖNEMLİ FONKSİYONLAR:
-  p.createCollisionShape()  - Fizik şekli
-  p.createVisualShape()     - Görsel şekli
-  p.createMultiBody()       - Nesne oluştur
-  p.createConstraint()      - Bağlantı oluştur
-  p.removeConstraint()      - Bağlantıyı kaldır
+IMPORTANT FUNCTIONS:
+  p.createCollisionShape()  - Physics shape
+  p.createVisualShape()     - Visual shape
+  p.createMultiBody()       - Create an object
+  p.createConstraint()      - Create a connection
+  p.removeConstraint()      - Remove a connection
 
-CONSTRAINT TÜRLERİ:
-  - JOINT_FIXED: Sabit bağlantı (gripper için)
-  - JOINT_POINT2POINT: Nokta bağlantısı
-  - JOINT_HINGE: Menteşe (döner)
-  - JOINT_PRISMATIC: Kayar
+CONSTRAINT TYPES:
+  - JOINT_FIXED: Fixed connection (for a gripper)
+  - JOINT_POINT2POINT: Point connection
+  - JOINT_HINGE: Hinge (rotating)
+  - JOINT_PRISMATIC: Sliding
 
-GERÇEK GRIPPER:
-  Gerçek robotlarda gripper'ın kendi eklemleri var
-  Örnek: Robotiq 2F-85
-    - 2 parmak
-    - Her parmak motor kontrollü
-    - Kuvvet sensörü
+REAL GRIPPER:
+  Real robots have their own gripper joints
+  Example: Robotiq 2F-85
+    - 2 fingers
+    - Each finger is motor-controlled
+    - Force sensor
 
-Bizim yöntem (kinematic grasping):
-  ✓ Basit
-  ✓ Hızlı
-  ✓ Eğitim için yeterli
-  ✗ Gerçekçi fizik yok
+Our method (kinematic grasping):
+  ✓ Simple
+  ✓ Fast
+  ✓ Sufficient for training
+  ✗ No realistic physics
 
-SONRAKI ADIM:
-→ PROJE 1: Gelişmiş Pick-and-Place
-  - Çoklu nesne
-  - Renk tanıma
-  - Hedef kutulara yerleştirme
+NEXT STEP:
+→ PROJECT 1: Advanced Pick-and-Place
+  - Multiple objects
+  - Color recognition
+  - Placing objects in target boxes
 """)
 
-input("\nDers bitti! ENTER'a basın...\n")
+input("\nLesson complete! Press ENTER...\n")
 
 p.disconnect()
-print("✓ PyBullet kapatıldı")
+print("✓ PyBullet disconnected")
