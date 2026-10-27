@@ -24,27 +24,27 @@ p.setGravity(0, 0, -9.81)
 print("✓ Gravity set")
 
 # STEP 4: Move the first joint to 45 degrees
-def eklem_hareket_ettir(eklem_no, aci):
+def position_control_joint(joint_no, target):
     """
     Move a joint to the specified angle.
 
-    eklem_no: Which joint (0, 1, 2, ...)
-    aci: Target angle (in radians)
+    joint_no: Which joint (0, 1, 2, ...)
+    target: Target angle (in radians)
     """
     p.setJointMotorControl2(
         bodyUniqueId=robot,
-        jointIndex=eklem_no,
+        jointIndex=joint_no,
         controlMode=p.POSITION_CONTROL,
-        targetPosition=aci
+        targetPosition=target
     )
 
-def simule_et(adim_sayisi):
+def simulate(no_steps):
     """
     Run the simulation for the specified number of steps.
 
-    adim_sayisi: Number of steps (e.g., 500 = ~2 seconds)
+    no_steps: Number of steps (e.g., 50 = ~5 seconds)
     """
-    for i in range(adim_sayisi):
+    for i in range(no_steps):
         p.stepSimulation()
         time.sleep(1./240.)
 
@@ -54,12 +54,12 @@ def simule_et(adim_sayisi):
 print("\n[TEST 1] Move the joints sequentially")
 
 print("  → Move joint 0 to 45 degrees...")
-eklem_hareket_ettir(eklem_no=0, aci=0.785)
-simule_et(500)
+position_control_joint(joint_no=0, target=0.785)
+simulate(50)
 
 print("  → Move joint 1 to 30 degrees...")
-eklem_hareket_ettir(eklem_no=1, aci=0.524)  # 30 derece
-simule_et(500)
+position_control_joint(joint_no=1, target=0.524)  # 30 derece
+simulate(50)
 
 print("  ✓ Test 1 complete\n")
 input("Press ENTER to continue...")
@@ -71,9 +71,9 @@ input("Press ENTER to continue...")
 print("\n[TEST 2] Move two joints at the same time")
 
 print("  → Move both joints to 0 degrees (reset)...")
-eklem_hareket_ettir(0, 0)
-eklem_hareket_ettir(1, 0)
-simule_et(1000)
+position_control_joint(0, 0)
+position_control_joint(1, 0)
+simulate(50)
 
 print("  ✓ Test 2 complete\n")
 input("Press ENTER to continue...")
@@ -90,11 +90,11 @@ t = 0
 try:
     while True:
         # Smooth movement using a sine wave
-        aci_0 = 0.5 * math.sin(t)
-        aci_1 = 0.3 * math.cos(t * 1.5)
+        target_0 = 0.5 * math.sin(t)
+        target_1 = 0.3 * math.cos(t * 1.5)
 
-        eklem_hareket_ettir(0, aci_0)
-        eklem_hareket_ettir(1, aci_1)
+        position_control_joint(0, target_0)
+        position_control_joint(1, target_1)
 
         p.stepSimulation()
         time.sleep(1./240.)
