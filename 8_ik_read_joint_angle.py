@@ -254,16 +254,16 @@ print(f"Radius: {yaricap}m")
 print(f"Number of points: {nokta_sayisi}\n")
 
 # Calculate the points on the circle
-noktalar = []
+points = []
 for i in range(nokta_sayisi):
     target = 2 * math.pi * i / nokta_sayisi
     x = merkez[0] + yaricap * math.cos(target)
     y = merkez[1] + yaricap * math.sin(target)
     z = merkez[2]
-    noktalar.append([x, y, z])
+    points.append([x, y, z])
 
 print("The robot is drawing the circle...")
-for i, nokta in enumerate(noktalar):
+for i, nokta in enumerate(points):
     # Calculate IK
     eklem_targetlari = inverse_kinematics(nokta)
     

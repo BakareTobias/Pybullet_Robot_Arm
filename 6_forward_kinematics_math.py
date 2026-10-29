@@ -44,7 +44,7 @@ print(f"  L2 (Link 2 length) = {L2} meters")
 input("\nPress ENTER to continue...\n")
 
 # =====================================================
-# Forward Kinematics Fonksiyonu
+# Forward Kinematics function
 # =====================================================
 def forward_kinematics(theta1, theta2, L1, L2):
     """
@@ -93,7 +93,7 @@ print("="*60)
 print("SECTION 2: Test with Different Angles")
 print("="*60)
 
-test_targetlar = [
+target_list = [
     (0, 0, "Both joints at 0°"),
     (90, 0, "Joint 1: 90°, Joint 2: 0°"),
     (45, 45, "Both joints at 45°"),
@@ -101,16 +101,16 @@ test_targetlar = [
     (0, 90, "Joint 1: 0°, Joint 2: 90°")
 ]
 
-for theta1_derece, theta2_derece, targetklama in test_targetlar:
+for theta1_degrees, theta2_degrees, target in target_list:
     # Convert degrees to radians
-    theta1 = math.radians(theta1_derece)
-    theta2 = math.radians(theta2_derece)
+    theta1 = math.radians(theta1_degrees)
+    theta2 = math.radians(theta2_degrees)
 
     # Calculate Forward Kinematics
     x, y = forward_kinematics(theta1, theta2, L1, L2)
 
-    print(f"\n{targetklama}")
-    print(f"  Input : θ1={theta1_derece}°, θ2={theta2_derece}°")
+    print(f"\n{target}")
+    print(f"  Input : θ1={theta1_degrees}°, θ2={theta2_degrees}°")
     print(f"  Output: x={x:.3f}m, y={y:.3f}m")
 
     # Distance from the base
@@ -126,7 +126,7 @@ print("="*60)
 print("SECTION 3: Visualization with Matplotlib")
 print("="*60)
 
-def robot_ciz(theta1, theta2, L1, L2, baslik=""):
+def plot_robot(theta1, theta2, L1, L2, title=""):
     """
     Draw the robot in a 2D plane.
     """
@@ -153,11 +153,11 @@ def robot_ciz(theta1, theta2, L1, L2, baslik=""):
     # Grid and settings
     plt.grid(True, alpha=0.3)
     plt.axis('equal')
-    plt.xlim(-2, 2)
-    plt.ylim(-2, 2)
+    #plt.xlim(-2, 2)
+    #plt.ylim(-2, 2)
     plt.xlabel('X (meters)', fontsize=12)
     plt.ylabel('Y (meters)', fontsize=12)
-    plt.title(baslik, fontsize=14, fontweight='bold')
+    plt.title(title, fontsize=14, fontweight='bold')
     plt.legend(fontsize=10)
 
     # Axis lines
@@ -168,13 +168,13 @@ def robot_ciz(theta1, theta2, L1, L2, baslik=""):
     plt.show()
 
 print("Example 1: Both joints at 0° (straight up)")
-robot_ciz(0, 0, L1, L2, "θ1=0°, θ2=0°")
+plot_robot(0, 0, L1, L2, "θ1=0°, θ2=0°")
 
 print("\nExample 2: Joint 1: 45°, Joint 2: 0°")
-robot_ciz(math.radians(45), 0, L1, L2, "θ1=45°, θ2=0°")
+plot_robot(math.radians(45), 0, L1, L2, "θ1=45°, θ2=0°")
 
 print("\nExample 3: Joint 1: 90°, Joint 2: -45°")
-robot_ciz(math.radians(90), math.radians(-45), L1, L2, "θ1=90°, θ2=-45°")
+plot_robot(math.radians(90), math.radians(-45), L1, L2, "θ1=90°, θ2=-45°")
 
 input("\nPress ENTER to continue...\n")
 
@@ -188,21 +188,21 @@ print("We will plot ALL points the robot hand can reach")
 print("This may take a few seconds...\n")
 
 # Try many angle combinations
-x_noktalar = []
-y_noktalar = []
+x_points = []
+y_points = []
 
-for theta1_derece in range(0, 360, 5):  # From 0° to 360°, in 5° steps
-    for theta2_derece in range(-180, 180, 5):  # From -180° to 180°
-        theta1 = math.radians(theta1_derece)
-        theta2 = math.radians(theta2_derece)
+for theta1_degrees in range(0, 360, 5):  # From 0° to 360°, in 5° steps
+    for theta2_degrees in range(-180, 180, 5):  # From -180° to 180°
+        theta1 = math.radians(theta1_degrees)
+        theta2 = math.radians(theta2_degrees)
 
         x, y = forward_kinematics(theta1, theta2, L1, L2)
-        x_noktalar.append(x)
-        y_noktalar.append(y)
+        x_points.append(x)
+        y_points.append(y)
 
 # Plot
 plt.figure(figsize=(10, 10))
-plt.scatter(x_noktalar, y_noktalar, c='blue', s=1, alpha=0.5)
+plt.scatter(x_points, y_points, c='blue', s=1, alpha=0.5)
 plt.grid(True, alpha=0.3)
 plt.axis('equal')
 plt.xlabel('X (meters)', fontsize=12)
@@ -212,11 +212,11 @@ plt.axhline(y=0, color='k', linestyle='--', alpha=0.3)
 plt.axvline(x=0, color='k', linestyle='--', alpha=0.3)
 
 # Min/Max reach
-max_uzaklik = L1 + L2
-min_uzaklik = abs(L1 - L2)
+max_reach = L1 + L2
+min_reach = abs(L1 - L2)
 print(f"✓ Workspace calculated!")
-print(f"  Maximum reach: {max_uzaklik:.3f}m (arms straight)")
-print(f"  Minimum reach: {min_uzaklik:.3f}m (arms overlapping)")
+print(f"  Maximum reach: {max_reach:.3f}m (arms straight)")
+print(f"  Minimum reach: {min_reach:.3f}m (arms overlapping)")
 
 plt.tight_layout()
 plt.show()
@@ -249,22 +249,22 @@ def position_control_joint(joint_no, target):
         targetPosition=target
     )
 
-def simulate(adim):
-    for _ in range(adim):
+def simulate(no_steps):
+    for _ in range(no_steps):
         p.stepSimulation()
         time.sleep(1./240.)
 
 # Test angles
-test_kombinasyonlar = [
+test_angles = [
     (0, 0),
     (math.radians(30), math.radians(45)),
     (math.radians(90), math.radians(-30))
 ]
 
 print("\nComparison:")
-for theta1, theta2 in test_kombinasyonlar:
+for theta1, theta2 in test_angles:
     # Our calculation
-    x_bizim, y_bizim = forward_kinematics(theta1, theta2, L1, L2)
+    x_position, y_position = forward_kinematics(theta1, theta2, L1, L2)
 
     # Give PyBullet the same angles
     position_control_joint(0, theta1)
@@ -276,7 +276,7 @@ for theta1, theta2 in test_kombinasyonlar:
     x_pybullet, y_pybullet, z_pybullet = joint_params[0]
 
     print(f"\nθ1={math.degrees(theta1):.0f}°, θ2={math.degrees(theta2):.0f}°")
-    print(f"  Our calculation: x={x_bizim:.3f}, y={y_bizim:.3f}")
+    print(f"  Our calculation: x={x_position:.3f}, y={y_position:.3f}")
     print(f"  PyBullet       : x={x_pybullet:.3f}, y={y_pybullet:.3f}, z={z_pybullet:.3f}")
     print(f"  Note: PyBullet is 3D, while ours is 2D. We compare X and Y.")
 

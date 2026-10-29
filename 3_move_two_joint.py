@@ -58,7 +58,7 @@ position_control_joint(joint_no=0, target=0.785)
 simulate(50)
 
 print("  → Move joint 1 to 30 degrees...")
-position_control_joint(joint_no=1, target=0.524)  # 30 derece
+position_control_joint(joint_no=1, target=0.524)  # 30 degrees
 simulate(50)
 
 print("  ✓ Test 1 complete\n")

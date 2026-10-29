@@ -152,15 +152,15 @@ def carpisma_var_mi(guvenlik_mesafesi=0.05):
     """
     for engel in engeller:
         # Closest distance between the obstacle and all robot links
-        yakin_noktalar = p.getClosestPoints(
+        yakin_points = p.getClosestPoints(
             bodyA=robot,
             bodyB=engel,
             distance=guvenlik_mesafesi  # Report if closer than this distance
         )
 
-        if len(yakin_noktalar) > 0:
+        if len(yakin_points) > 0:
             # Find the closest distance
-            min_mesafe = min([nokta[8] for nokta in yakin_noktalar])
+            min_mesafe = min([nokta[8] for nokta in yakin_points])
 
             if min_mesafe < guvenlik_mesafesi:
                 return True, min_mesafe

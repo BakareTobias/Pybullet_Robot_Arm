@@ -91,7 +91,7 @@ def get_end_effector_position():
     Get the end-effector position.
     (Position of the last link)
     """
-    # Link state: [pos, orn, local_inertial_pos, ...]
+    # Link state: [position, orientation, local_inertial_pos, ...]
     # Link 6 = end-effector (Kuka has 7 links, 0-6)
     state = p.getLinkState(robot, 6)
     return state[0]  # (x, y, z) position
@@ -179,7 +179,7 @@ input("\n→ Press ENTER to continue...")
 
 # TEST 2: First joint at 45°
 print("\n[TEST 2] First joint at 45°, second joint at 0°")
-target_j1 = math.radians(45)  # 45 derece
+target_j1 = math.radians(45)  # 45 degrees
 target_j2 = 0.0
 
 set_joint_position(joint1_idx, target_j1)
