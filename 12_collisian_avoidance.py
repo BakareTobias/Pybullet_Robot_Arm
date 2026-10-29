@@ -115,7 +115,7 @@ input("\nPress ENTER to continue...\n")
 # =====================================================
 # HELPER FUNCTIONS
 # =====================================================
-def eklem_hareket_ettir(eklem_no, aci):
+def position_control_joint(eklem_no, aci):
     p.setJointMotorControl2(
         bodyUniqueId=robot,
         jointIndex=eklem_no,
@@ -188,7 +188,7 @@ for idx, hedef in enumerate(guvenli_hedefler, 1):
     eklem_acilari = ik_hesapla(*hedef)
 
     for i in range(7):
-        eklem_hareket_ettir(i, eklem_acilari[i])
+        position_control_joint(i, eklem_acilari[i])
 
     # Check for collisions while moving
     for _ in range(300):
@@ -220,7 +220,7 @@ print("\n→ The robot will move toward the dangerous target...")
 eklem_acilari = ik_hesapla(*tehlikeli_hedef)
 
 for i in range(7):
-    eklem_hareket_ettir(i, eklem_acilari[i])
+    position_control_joint(i, eklem_acilari[i])
 
 # Monitor during movement
 carpti_mi = False
@@ -306,7 +306,7 @@ for idx in range(len(waypoints) - 1):
         eklem_acilari = ik_hesapla(*hedef_anlik)
 
         for i in range(7):
-            eklem_hareket_ettir(i, eklem_acilari[i])
+            position_control_joint(i, eklem_acilari[i])
 
         p.stepSimulation()
         time.sleep(1./240.)
@@ -349,7 +349,7 @@ marker_goster(*hedef_dinamik, renk=[1, 0.5, 0, 0.8])
 eklem_acilari = ik_hesapla(*hedef_dinamik)
 
 for i in range(7):
-    eklem_hareket_ettir(i, eklem_acilari[i])
+    position_control_joint(i, eklem_acilari[i])
 
 for adim in range(500):
     carpti, mesafe = carpisma_var_mi(guvenlik_mesafesi=0.12)

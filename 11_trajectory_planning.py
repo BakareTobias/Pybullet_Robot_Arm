@@ -200,7 +200,7 @@ p.resetDebugVisualizerCamera(
     cameraTargetPosition=[0, 0, 0.5]
 )
 
-def eklem_hareket_ettir(eklem_no, aci):
+def position_control_joint(eklem_no, aci):
     p.setJointMotorControl2(
         bodyUniqueId=robot,
         jointIndex=eklem_no,
@@ -248,7 +248,7 @@ print("\n→ Robot will move LINEARLY (3 seconds)")
 # Move to the starting position
 eklem_acilari = ik_hesapla(*baslangic_pos)
 for i in range(7):
-    eklem_hareket_ettir(i, eklem_acilari[i])
+    position_control_joint(i, eklem_acilari[i])
 simule_et(300)
 
 print("  Movement starting...")
@@ -265,7 +265,7 @@ for adim in range(adim_sayisi):
     marker_goster(*hedef, renk=[1, 0, 0, 0.8])
     eklem_acilari = ik_hesapla(*hedef)
     for i in range(7):
-        eklem_hareket_ettir(i, eklem_acilari[i])
+        position_control_joint(i, eklem_acilari[i])
 
     p.stepSimulation()
     time.sleep(1./240.)
@@ -289,7 +289,7 @@ print("\n→ Robot will move using CUBIC interpolation (3 seconds)")
 # Return to the start
 eklem_acilari = ik_hesapla(*baslangic_pos)
 for i in range(7):
-    eklem_hareket_ettir(i, eklem_acilari[i])
+    position_control_joint(i, eklem_acilari[i])
 simule_et(300)
 
 print("  Movement starting...")
@@ -305,7 +305,7 @@ for adim in range(adim_sayisi):
     marker_goster(*hedef, renk=[0, 1, 0, 0.8])
     eklem_acilari = ik_hesapla(*hedef)
     for i in range(7):
-        eklem_hareket_ettir(i, eklem_acilari[i])
+        position_control_joint(i, eklem_acilari[i])
 
     p.stepSimulation()
     time.sleep(1./240.)
@@ -359,7 +359,7 @@ for idx in range(len(waypoints) - 1):
         marker_goster(*hedef, renk=[0, 0, 1, 0.8])
         eklem_acilari = ik_hesapla(*hedef)
         for i in range(7):
-            eklem_hareket_ettir(i, eklem_acilari[i])
+            position_control_joint(i, eklem_acilari[i])
 
         p.stepSimulation()
         time.sleep(1./240.)

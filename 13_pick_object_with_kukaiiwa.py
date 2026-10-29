@@ -219,7 +219,7 @@ This method is called "Kinematic Grasping".
 """)
 
 # Helper functions
-def eklem_hareket_ettir(eklem_no, aci):
+def position_control_joint(eklem_no, aci):
     p.setJointMotorControl2(
         robot, eklem_no,
         p.POSITION_CONTROL,
@@ -237,7 +237,7 @@ def robot_hareket_ettir(hedef_pos, sure=2.0):
     adim_sayisi = int(sure * 240)
     for _ in range(adim_sayisi):
         for i in range(7):
-            eklem_hareket_ettir(i, eklem_acilari[i])
+            position_control_joint(i, eklem_acilari[i])
         p.stepSimulation()
         time.sleep(1./240.)
 

@@ -241,7 +241,7 @@ print("✓ PyBullet started")
 robot = p.loadURDF("kuka_iiwa/model.urdf", [0, 0, 0], useFixedBase=True)
 print("✓ Kuka robot loaded")
 
-def eklem_hareket_ettir(eklem_no, aci):
+def position_control_joint(eklem_no, aci):
     p.setJointMotorControl2(
         bodyUniqueId=robot,
         jointIndex=eklem_no,
@@ -267,8 +267,8 @@ for theta1, theta2 in test_kombinasyonlar:
     x_bizim, y_bizim = forward_kinematics(theta1, theta2, L1, L2)
 
     # Give PyBullet the same angles
-    eklem_hareket_ettir(0, theta1)
-    eklem_hareket_ettir(1, theta2)
+    position_control_joint(0, theta1)
+    position_control_joint(1, theta2)
     simule_et(300)
 
     # PyBullet's calculation

@@ -63,7 +63,7 @@ p.resetDebugVisualizerCamera(
     cameraTargetPosition=[0, 0, 0.5]
 )
 
-def eklem_hareket_ettir(eklem_no, aci):
+def position_control_joint(eklem_no, aci):
     p.setJointMotorControl2(
         bodyUniqueId=robot,
         jointIndex=eklem_no,
@@ -142,7 +142,7 @@ for i in range(7):
 
 print("\n  → Moving the robot to the calculated angles...")
 for i in range(7):
-    eklem_hareket_ettir(i, eklem_acilari[i])
+    position_control_joint(i, eklem_acilari[i])
 
 simule_et(500)
 
@@ -191,7 +191,7 @@ for idx, (hedef, renk) in enumerate(hedefler, 1):
 
     # Move the robot
     for i in range(7):
-        eklem_hareket_ettir(i, eklem_acilari[i])
+        position_control_joint(i, eklem_acilari[i])
 
     simule_et(400)
 
@@ -226,7 +226,7 @@ eklem_acilari = pybullet_ik(hedef_uzak[0], hedef_uzak[1], hedef_uzak[2])
 
 print("  → The robot is moving to the nearest position...")
 for i in range(7):
-    eklem_hareket_ettir(i, eklem_acilari[i])
+    position_control_joint(i, eklem_acilari[i])
 
 simule_et(500)
 
@@ -286,7 +286,7 @@ while time.time() - baslangic < 10:
     eklem_acilari = pybullet_ik(x, y, z)
 
     for i in range(7):
-        eklem_hareket_ettir(i, eklem_acilari[i])
+        position_control_joint(i, eklem_acilari[i])
 
     simule_et(100)
 

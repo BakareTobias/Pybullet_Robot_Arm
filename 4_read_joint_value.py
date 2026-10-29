@@ -21,36 +21,36 @@ print("✓ Robot loaded\n")
 # =====================================================
 # NEW FUNCTION: Read joint state
 # =====================================================
-def eklem_durumunu_oku(eklem_no):
+def read_joint_state(joint_no):
     """
     Read the actual state of a joint.
 
     Returns:
-        aci: Current joint angle (radians)
-        hiz: Joint rotational velocity (radians/second)
+        joint_angle: Current joint angle (radians)
+        velocity: Joint rotational velocity (radians/second)
     """
-    durum = p.getJointState(robot, eklem_no)
+    joint_params = p.getJointState(robot, joint_no)
 
-    # durum is a tuple (multiple values):
-    # durum[0] = position (angle)
-    # durum[1] = velocity
-    # durum[2] = reaction forces (not used for now)
-    # durum[3] = applied torque
+    # joint_params is a tuple (multiple values):
+    # joint_params[0] = position (angle)
+    # joint_params[1] = velocity
+    # joint_params[2] = reaction forces (not used for now)
+    # joint_params[3] = applied torque
 
-    aci = durum[0]
-    hiz = durum[1]
+    joint_angle = joint_params[0]
+    velocity = joint_params[1]
 
-    return aci, hiz
+    return joint_angle, velocity
 
 # =====================================================
 # Previous functions
 # =====================================================
-def eklem_hareket_ettir(eklem_no, aci):
+def position_control_joint(joint_no, joint_angle):
     p.setJointMotorControl2(
         bodyUniqueId=robot,
-        jointIndex=eklem_no,
+        jointIndex=joint_no,
         controlMode=p.POSITION_CONTROL,
-        targetPosition=aci
+        targetPosition=joint_angle
     )
 
 def simule_et(adim_sayisi):
@@ -66,11 +66,11 @@ print("TEST 1: Initial Position")
 print("="*50)
 
 # Read the state of the first 3 joints
-for eklem in range(4):
-    aci, hiz = eklem_durumunu_oku(eklem)
-    print(f"Joint {eklem}:")
-    print(f"  Angle: {aci:.3f} radians = {math.degrees(aci):.1f} degrees")
-    print(f"  Velocity: {hiz:.3f} rad/s")
+for joint in range(4):
+    joint_angle, joint_velocity = read_joint_state(joint)
+    print(f"Joint {joint}:")
+    print(f"  Angle: {joint_angle:.3f} radians = {math.degrees(joint_angle):.1f} degrees")
+    print(f"  Velocity: {joint_velocity:.3f} rad/s")
 
 input("\nPress ENTER to continue...")
 
@@ -81,28 +81,28 @@ print("\n" + "="*50)
 print("TEST 2: Target vs. Actual Angle")
 print("="*50)
 
-hedef_aci = 1.0  # ~57 degrees
+joint_target = 1.0  # ~57 degrees
 
-print(f"\nTarget: Move joint 0 to {hedef_aci:.3f} radians ({math.degrees(hedef_aci):.1f}°)")
-eklem_hareket_ettir(0, hedef_aci)
+print(f"\nTarget: Move joint 0 to {joint_target:.3f} radians ({math.degrees(joint_target):.1f}°)")
+position_control_joint(0, joint_target)
 
-# Show the state every 100 steps during movement
+# Show the state every 10 steps during movement
 print("\nMoving...")
-for adim in range(500):
+for step in range(50):
     p.stepSimulation()
     time.sleep(1./240.)
 
-    # Report every 100 steps
-    if adim % 100 == 0:
-        aci, hiz = eklem_durumunu_oku(0)
-        print(f"  Step {adim:3d}: Angle={math.degrees(aci):6.2f}°, Velocity={hiz:6.3f} rad/s")
+    # Report every 10 steps
+    if step % 10 == 0:
+        joint_angle, joint_velocity = read_joint_state(0)
+        print(f"  Step {step:3d}: Angle={math.degrees(joint_angle):6.2f}°, Velocity={joint_velocity:6.3f} rad/s")
 
 # Final state
-aci_final, hiz_final = eklem_durumunu_oku(0)
+joint_angle_final, joint_velocity_final = read_joint_state(0)
 print(f"\n✓ Movement complete!")
-print(f"  Target angle : {math.degrees(hedef_aci):.2f}°")
-print(f"  Actual angle: {math.degrees(aci_final):.2f}°")
-print(f"  Difference      : {math.degrees(aci_final - hedef_aci):.2f}°")
+print(f"  Target angle : {math.degrees(joint_target):.2f}°")
+print(f"  Actual angle: {math.degrees(joint_angle_final):.2f}°")
+print(f"  Difference      : {math.degrees(joint_angle_final - joint_target):.2f}°")
 
 input("\nPress ENTER to continue...")
 
@@ -114,35 +114,35 @@ print("TEST 3: Coordinated Movement of Two Joints")
 print("="*50)
 
 # Targets
-hedef_0 = 0.8   # ~46 degrees
-hedef_1 = -0.6  # ~-34 degrees
-hedef_2 = 1.57
-hedef_3 = -1.048
+joint_target_0 = 0.8   # ~46 degrees
+joint_target_1 = -0.6  # ~-34 degrees
+joint_target_2 = 1.57
+joint_target_3 = -1.048
 
 print(f"\nTargets:")
-print(f"  Joint 0: {math.degrees(hedef_0):.1f}°")
-print(f"  Joint 1: {math.degrees(hedef_1):.1f}°")
+print(f"  Joint 0: {math.degrees(joint_target_0):.1f}°")
+print(f"  Joint 1: {math.degrees(joint_target_1):.1f}°")
 
-eklem_hareket_ettir(0, hedef_0)
-eklem_hareket_ettir(1, hedef_1)
-eklem_hareket_ettir(2, hedef_2)
-eklem_hareket_ettir(3, hedef_3)
+position_control_joint(0, joint_target_0)
+position_control_joint(1, joint_target_1)
+position_control_joint(2, joint_target_2)
+position_control_joint(3, joint_target_3)
 
 print("\nMoving...")
-for adim in range(500):
+for step in range(50):
     p.stepSimulation()
     time.sleep(1./240.)
 
-    if adim % 100 == 0:
-        aci_0, hiz_0 = eklem_durumunu_oku(0)
-        aci_1, hiz_1 = eklem_durumunu_oku(1)
-        aci_2, hiz_2 = eklem_durumunu_oku(2)
-        aci_3, hiz_3 = eklem_durumunu_oku(3)
-        print(f"  Step {adim:3d}:")
-        print(f"    Joint 0: {math.degrees(aci_0):6.2f}°")
-        print(f"    Joint 1: {math.degrees(aci_1):6.2f}°")
-        print(f"    Joint 2: {math.degrees(aci_2):6.2f}°")
-        print(f"    Joint 2: {math.degrees(aci_3):6.2f}°")
+    if step % 10 == 0:
+        joint_angle_0, joint_velocity_0 = read_joint_state(0)
+        joint_angle_1, joint_velocity_1 = read_joint_state(1)
+        joint_angle_2, joint_velocity_2 = read_joint_state(2)
+        joint_angle_3, joint_velocity_3 = read_joint_state(3)
+        print(f"    Step {step:3d}:")
+        print(f"    Joint 0: {math.degrees(joint_angle_0):6.2f}°")
+        print(f"    Joint 1: {math.degrees(joint_angle_1):6.2f}°")
+        print(f"    Joint 2: {math.degrees(joint_angle_2):6.2f}°")
+        print(f"    Joint 3: {math.degrees(joint_angle_3):6.2f}°")
 
 print("\n✓ Coordinated movement complete!")
 
@@ -155,25 +155,25 @@ print("\n" + "="*50)
 print("TEST 4: Reset Angles")
 print("="*50)
 
-eklem_hareket_ettir(0, 0)
-eklem_hareket_ettir(1, 0)
-eklem_hareket_ettir(2, 0)
-eklem_hareket_ettir(3, 0)
+position_control_joint(0, 0)
+position_control_joint(1, 0)
+position_control_joint(2, 0)
+position_control_joint(3, 0)
 
-for adim in range(500):
+for step in range(50):
     p.stepSimulation()
     time.sleep(1./240.)
 
-    if adim % 100 == 0:
-        aci_0, hiz_0 = eklem_durumunu_oku(0)
-        aci_1, hiz_1 = eklem_durumunu_oku(1)
-        aci_2, hiz_2 = eklem_durumunu_oku(2)
-        aci_3, hiz_3 = eklem_durumunu_oku(3)
-        print(f"  Step {adim:3d}:")
-        print(f"    Joint 0: {math.degrees(aci_0):6.2f}°")
-        print(f"    Joint 1: {math.degrees(aci_1):6.2f}°")
-        print(f"    Joint 2: {math.degrees(aci_2):6.2f}°")
-        print(f"    Joint 2: {math.degrees(aci_3):6.2f}°")
+    if step % 10 == 0:
+        joint_angle_0, joint_velocity_0 = read_joint_state(0)
+        joint_angle_1, joint_velocity_1 = read_joint_state(1)
+        joint_angle_2, joint_velocity_2 = read_joint_state(2)
+        joint_angle_3, joint_velocity_3 = read_joint_state(3)
+        print(f"    Step {step:3d}:")
+        print(f"    Joint 0: {math.degrees(joint_angle_0):6.2f}°")
+        print(f"    Joint 1: {math.degrees(joint_angle_1):6.2f}°")
+        print(f"    Joint 2: {math.degrees(joint_angle_2):6.2f}°")
+        print(f"    Joint 3: {math.degrees(joint_angle_3):6.2f}°")
 
 print("\n✓ Angles reset!")
 
@@ -187,25 +187,25 @@ print("="*50)
 print("The robot will swing for 10 seconds")
 print("Joint states will be displayed in real time\n")
 
-baslangic = time.time()
+start_time = time.time()
 t = 0
 
-while time.time() - baslangic < 10:  # 10 saniye
+while time.time() - start_time < 10:  # 10 seconds 
     # Sinusoidal movement
     hedef_0 = 0.6 * math.sin(t)
     hedef_1 = 0.4 * math.cos(t * 1.3)
 
-    eklem_hareket_ettir(0, hedef_0)
-    eklem_hareket_ettir(1, hedef_1)
+    position_control_joint(0, hedef_0)
+    position_control_joint(1, hedef_1)
 
     # Read the actual state
-    gercek_0, hiz_0 = eklem_durumunu_oku(0)
-    gercek_1, hiz_1 = eklem_durumunu_oku(1)
+    joint_angle_0, joint_velocity_0 = read_joint_state(0)
+    joint_angle_1, joint_velocity_1 = read_joint_state(1)
 
     # Print to the screen (update the same line)
-    print(f"\rJoint 0: {math.degrees(gercek_0):6.1f}° | "
-          f"Joint 1: {math.degrees(gercek_1):6.1f}° | "
-          f"Time: {time.time()-baslangic:.1f}s", end="")
+    print(f"\rJoint 0: {math.degrees(joint_angle_0):6.1f}° | "
+          f"Joint 1: {math.degrees(joint_angle_1):6.1f}° | "
+          f"Time: {time.time()-start_time:.1f}s", end="")
 
     p.stepSimulation()
     time.sleep(1./240.)

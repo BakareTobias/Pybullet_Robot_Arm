@@ -24,7 +24,7 @@ p.loadURDF("plane.urdf")
 # =====================================================
 # HELPER FUNCTIONS
 # =====================================================
-def eklem_hareket_ettir(eklem_no, aci):
+def position_control_joint(eklem_no, aci):
     p.setJointMotorControl2(
         bodyUniqueId=robot,
         jointIndex=eklem_no,
@@ -32,7 +32,7 @@ def eklem_hareket_ettir(eklem_no, aci):
         targetPosition=aci
     )
 
-def eklem_durumunu_oku(eklem_no):
+def read_joint_state(eklem_no):
     durum = p.getJointState(robot, eklem_no)
     return durum[0], durum[1]  # angle, velocity
 
@@ -107,7 +107,7 @@ print("="*60)
 # Reset all joints
 print("\n→ Resetting the robot (all joints to 0°)...")
 for i in range(7):
-    eklem_hareket_ettir(i, 0)
+    position_control_joint(i, 0)
 simule_et(300)
 
 # Read the hand position
@@ -130,7 +130,7 @@ print("TEST 2: Single Joint Movement and Position Change")
 print("="*60)
 
 print("\n→ Rotate joint 0 by 45°...")
-eklem_hareket_ettir(0, math.radians(45))
+position_control_joint(0, math.radians(45))
 simule_et(400)
 
 x, y, z = el_pozisyonunu_oku()
@@ -158,12 +158,12 @@ print("="*60)
 # Reset
 print("\n→ Resetting the robot...")
 for i in range(7):
-    eklem_hareket_ettir(i, 0)
+    position_control_joint(i, 0)
 simule_et(300)
 
 print("→ Joint 0: 30°, Joint 1: 45°")
-eklem_hareket_ettir(0, math.radians(30))
-eklem_hareket_ettir(1, math.radians(45))
+position_control_joint(0, math.radians(30))
+position_control_joint(1, math.radians(45))
 simule_et(400)
 
 x, y, z = el_pozisyonunu_oku()
@@ -198,8 +198,8 @@ for idx, (acilar, renk) in enumerate(pozisyonlar, 1):
 
     print(f"Position {idx}: Joint 0={aci0:3d}°, Joint 1={aci1:3d}°")
 
-    eklem_hareket_ettir(0, math.radians(aci0))
-    eklem_hareket_ettir(1, math.radians(aci1))
+    position_control_joint(0, math.radians(aci0))
+    position_control_joint(1, math.radians(aci1))
     simule_et(300)
 
     x, y, z = el_pozisyonunu_oku()
@@ -232,8 +232,8 @@ while time.time() - baslangic < 10:
     aci0 = 0.5 * math.sin(t)
     aci1 = 0.4 * math.cos(t * 1.2)
 
-    eklem_hareket_ettir(0, aci0)
-    eklem_hareket_ettir(1, aci1)
+    position_control_joint(0, aci0)
+    position_control_joint(1, aci1)
 
     # Read the hand position
     x, y, z = el_pozisyonunu_oku()

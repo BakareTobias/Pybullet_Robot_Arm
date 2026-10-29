@@ -31,7 +31,7 @@ print("✓ Robot loaded\n")
 # =====================================================
 # HELPER FUNCTIONS
 # =====================================================
-def eklem_hareket_ettir(eklem_no, aci, max_force=200, max_velocity=1.0):
+def position_control_joint(eklem_no, aci, max_force=200, max_velocity=1.0):
     """Move a joint to the specified angle."""
     p.setJointMotorControl2(
         bodyUniqueId=robot,
@@ -44,7 +44,7 @@ def eklem_hareket_ettir(eklem_no, aci, max_force=200, max_velocity=1.0):
         velocityGain=1.0
     )
 
-def eklem_durumunu_oku(eklem_no):
+def read_joint_state(eklem_no):
     """Read the joint state."""
     durum = p.getJointState(robot, eklem_no)
     return durum[0]  # Angle
@@ -115,7 +115,7 @@ def inverse_kinematics(hedef_pozisyon, hedef_orientasyon=None):
     # Get the current joint positions (initial values)
     current_positions = []
     for joint_idx in movable_joints:
-        current_positions.append(eklem_durumunu_oku(joint_idx))
+        current_positions.append(read_joint_state(joint_idx))
     
     # Calculate IK
     ik_result = p.calculateInverseKinematics(
@@ -167,7 +167,7 @@ for idx, joint_idx in enumerate(movable_joints[:7]):  # First 7 joints
     info = p.getJointInfo(robot, joint_idx)
     eklem_adi = info[1].decode('utf-8')
     print(f"  Joint {joint_idx} ({eklem_adi}): {math.degrees(aci):.2f}°")
-    eklem_hareket_ettir(joint_idx, aci)
+    position_control_joint(joint_idx, aci)
 
 # Wait for the movement
 print("\nRobot moving to the target...")
@@ -216,7 +216,7 @@ for i, (hedef_pos, renk) in enumerate(hedefler):
     
     # Move the joints
     for idx, joint_idx in enumerate(movable_joints[:7]):
-        eklem_hareket_ettir(joint_idx, eklem_acilari[idx])
+        position_control_joint(joint_idx, eklem_acilari[idx])
     
     # Wait for the movement
     simule_et(400)
@@ -269,7 +269,7 @@ for i, nokta in enumerate(noktalar):
     
     # Move the joints
     for idx, joint_idx in enumerate(movable_joints[:7]):
-        eklem_hareket_ettir(joint_idx, eklem_acilari[idx])
+        position_control_joint(joint_idx, eklem_acilari[idx])
     
     # Run a short simulation at each point
     simule_et(50)
@@ -306,7 +306,7 @@ while time.time() - baslangic < 10:
     
     # Move the joints
     for idx, joint_idx in enumerate(movable_joints[:7]):
-        eklem_hareket_ettir(joint_idx, eklem_acilari[idx])
+        position_control_joint(joint_idx, eklem_acilari[idx])
     
     # Read the actual position
     gercek_pos = end_effector_pozisyonu()
