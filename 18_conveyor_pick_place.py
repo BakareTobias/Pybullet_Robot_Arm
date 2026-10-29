@@ -312,7 +312,7 @@ class PyBulletConveyorSystem:
         """
         
         if target_orientation is None:
-            # Default orientation (facing downward)
+            # Default orientation (ftargetng downward)
             target_orientation = p.getQuaternionFromEuler([math.pi, 0, 0])
         
         joint_poses = p.calculateInverseKinematics(
@@ -636,7 +636,7 @@ class PyBulletConveyorSystem:
         Place the object in the drop box.
         """
         
-        print(f"\n📦 Placing object @ [{self.drop_position[0]:.3f}, {self.drop_position[1]:.3f}, {self.drop_position[2]:.3f}]")
+        print(f"\n📦 Pltargetng object @ [{self.drop_position[0]:.3f}, {self.drop_position[1]:.3f}, {self.drop_position[2]:.3f}]")
         
         # 1. Move to the drop position
         self.move_to_position(self.drop_position, velocity=0.8)

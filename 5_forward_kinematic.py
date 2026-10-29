@@ -24,27 +24,27 @@ p.loadURDF("plane.urdf")
 # =====================================================
 # HELPER FUNCTIONS
 # =====================================================
-def position_control_joint(eklem_no, aci):
+def position_control_joint(joint_no, target):
     p.setJointMotorControl2(
         bodyUniqueId=robot,
-        jointIndex=eklem_no,
+        jointIndex=joint_no,
         controlMode=p.POSITION_CONTROL,
-        targetPosition=aci
+        targetPosition=target
     )
 
-def read_joint_state(eklem_no):
-    durum = p.getJointState(robot, eklem_no)
-    return durum[0], durum[1]  # angle, velocity
+def read_joint_state(joint_no):
+    joint_params = p.getJointState(robot, joint_no)
+    return joint_params[0], joint_params[1]  # angle, velocity
 
-def simule_et(adim_sayisi):
-    for i in range(adim_sayisi):
+def simulate(no_steps):
+    for i in range(no_steps):
         p.stepSimulation()
         time.sleep(1./240.)
 
 # =====================================================
 # NEW FUNCTION: Read the End-Effector Position
 # =====================================================
-def el_pozisyonunu_oku():
+def read_end_effector_position():
     """
     Read the actual position of the robot hand (end-effector).
 
@@ -53,47 +53,47 @@ def el_pozisyonunu_oku():
     """
     # getLinkState: Read the state of a link (part)
     # Link 6 = the Kuka robot's hand (last link)
-    durum = p.getLinkState(robot, 6)
+    joint_params = p.getLinkState(robot, 6)
 
-    # durum[0] = position (x, y, z)
-    # durum[1] = orientation (rotation, quaternion)
+    # joint_params[0] = position (x, y, z)
+    # joint_params[1] = orientation (rotation, quaternion)
 
-    pozisyon = durum[0]  # (x, y, z) tuple
+    position = joint_params[0]  # (x, y, z) tuple
 
-    return pozisyon
+    return position
 
 # =====================================================
 # NEW: Visual Marker
 # =====================================================
-isaretleyici = None
+sphere = None
 
-def isaretleyici_ciz(x, y, z, renk=[0, 1, 0, 0.8]):
+def draw_sphere(x, y, z, renk=[0, 1, 0, 0.8]):
     """
     Draw a colored sphere at the specified position.
 
     Parameters:
         x, y, z: Position
-        renk: [R, G, B, Alpha] (from 0 to 1)
+        renk: [R, G, B, transparency] (from 0 to 1)
     """
-    global isaretleyici
+    global sphere
 
     # Remove the old marker
-    if isaretleyici is not None:
+    if sphere is not None:
         try:
-            p.removeBody(isaretleyici)
+            p.removeBody(sphere)
         except:
             pass
 
-    # Create a new sphere
-    gorsel = p.createVisualShape(
+    # define a new sphere
+    visualshape = p.createVisualShape(
         shapeType=p.GEOM_SPHERE,
         radius=0.05,
         rgbaColor=renk
     )
-
-    isaretleyici = p.createMultiBody(
+    #create the sphere in simulation
+    sphere = p.createMultiBody(
         baseMass=0,
-        baseVisualShapeIndex=gorsel,
+        baseVisualShapeIndex=visualshape,
         basePosition=[x, y, z]
     )
 
@@ -108,17 +108,17 @@ print("="*60)
 print("\n→ Resetting the robot (all joints to 0°)...")
 for i in range(7):
     position_control_joint(i, 0)
-simule_et(300)
+simulate(300)
 
 # Read the hand position
-x, y, z = el_pozisyonunu_oku()
+x, y, z = read_end_effector_position()
 print(f"\n✓ Robot hand position:")
 print(f"   X = {x:.3f} meters")
 print(f"   Y = {y:.3f} meters")
 print(f"   Z = {z:.3f} meters")
 
 # Mark with a green sphere
-isaretleyici_ciz(x, y, z, renk=[0, 1, 0, 0.8])
+draw_sphere(x, y, z, renk=[0, 1, 0, 0.8])
 
 input("\nPress ENTER to continue...")
 
@@ -131,16 +131,16 @@ print("="*60)
 
 print("\n→ Rotate joint 0 by 45°...")
 position_control_joint(0, math.radians(45))
-simule_et(400)
+simulate(40)
 
-x, y, z = el_pozisyonunu_oku()
+x, y, z = read_end_effector_position()
 print(f"\n✓ New hand position:")
 print(f"   X = {x:.3f} meters")
 print(f"   Y = {y:.3f} meters")
 print(f"   Z = {z:.3f} meters")
 
 # Mark with a red sphere
-isaretleyici_ciz(x, y, z, renk=[1, 0, 0, 0.8])
+draw_sphere(x, y, z, renk=[1, 0, 0, 0.8])
 
 print("\nObservation:")
 print("  Joint 0 rotates around the Z axis")
@@ -159,20 +159,20 @@ print("="*60)
 print("\n→ Resetting the robot...")
 for i in range(7):
     position_control_joint(i, 0)
-simule_et(300)
+simulate(30)
 
 print("→ Joint 0: 30°, Joint 1: 45°")
 position_control_joint(0, math.radians(30))
 position_control_joint(1, math.radians(45))
-simule_et(400)
+simulate(40)
 
-x, y, z = el_pozisyonunu_oku()
+x, y, z = read_end_effector_position()
 print(f"\n✓ Hand position:")
 print(f"   X = {x:.3f} m")
 print(f"   Y = {y:.3f} m")
 print(f"   Z = {z:.3f} m")
 
-isaretleyici_ciz(x, y, z, renk=[0, 0, 1, 0.8])
+draw_sphere(x, y, z, renk=[0, 0, 1, 0.8])
 
 input("\nPress ENTER to continue...")
 
@@ -185,7 +185,7 @@ print("="*60)
 print("The robot will move to 5 different positions")
 print("Each position will be marked with a different color\n")
 
-pozisyonlar = [
+positionArray = [
     ([0, 0], [0, 1, 0, 0.7]),           # Green
     ([45, 0], [1, 0, 0, 0.7]),          # Red
     ([0, 45], [0, 0, 1, 0.7]),          # Blue
@@ -193,21 +193,21 @@ pozisyonlar = [
     ([-30, 60], [1, 0, 1, 0.7])         # Purple
 ]
 
-for idx, (acilar, renk) in enumerate(pozisyonlar, 1):
-    aci0, aci1 = acilar
+for idx, (targetlar, renk) in enumerate(positionArray, 1):
+    target0, target1 = targetlar
 
-    print(f"Position {idx}: Joint 0={aci0:3d}°, Joint 1={aci1:3d}°")
+    print(f"Position {idx}: Joint 0={target0:3d}°, Joint 1={target1:3d}°")
 
-    position_control_joint(0, math.radians(aci0))
-    position_control_joint(1, math.radians(aci1))
-    simule_et(300)
+    position_control_joint(0, math.radians(target0))
+    position_control_joint(1, math.radians(target1))
+    simulate(30)
 
-    x, y, z = el_pozisyonunu_oku()
+    x, y, z = read_end_effector_position()
     print(f"   → Position: ({x:.3f}, {y:.3f}, {z:.3f})")
 
     # Create a persistent marker (do not remove it)
-    gorsel = p.createVisualShape(p.GEOM_SPHERE, radius=0.04, rgbaColor=renk)
-    p.createMultiBody(0, baseVisualShapeIndex=gorsel, basePosition=[x, y, z])
+    visualShape = p.createVisualShape(p.GEOM_SPHERE, radius=0.04, rgbaColor=renk)
+    p.createMultiBody(0, baseVisualShapeIndex=visualShape, basePosition=[x, y, z])
 
     time.sleep(0.5)
 
@@ -224,25 +224,25 @@ print("="*60)
 print("The robot will swing for 10 seconds")
 print("The hand position will be displayed in real time\n")
 
-baslangic = time.time()
+start_time = time.time()
 t = 0
 
-while time.time() - baslangic < 10:
+while time.time() - start_time < 10:
     # Sinusoidal movement
-    aci0 = 0.5 * math.sin(t)
-    aci1 = 0.4 * math.cos(t * 1.2)
+    target0 = 0.5 * math.sin(t)
+    target1 = 0.4 * math.cos(t * 1.2)
 
-    position_control_joint(0, aci0)
-    position_control_joint(1, aci1)
+    position_control_joint(0, target0)
+    position_control_joint(1, target1)
 
     # Read the hand position
-    x, y, z = el_pozisyonunu_oku()
+    x, y, z = read_end_effector_position()
 
     # Update the marker
-    isaretleyici_ciz(x, y, z)
+    draw_sphere(x, y, z)
 
     # Print to the screen
-    print(f"\rHand Position: X={x:6.3f} Y={y:6.3f} Z={z:6.3f} | Time: {time.time()-baslangic:.1f}s", end="")
+    print(f"\rHand Position: X={x:6.3f} Y={y:6.3f} Z={z:6.3f} | Time: {time.time()-start_time:.1f}s", end="")
 
     p.stepSimulation()
     time.sleep(1./240.)

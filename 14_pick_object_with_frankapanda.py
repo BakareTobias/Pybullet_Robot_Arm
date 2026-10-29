@@ -110,7 +110,7 @@ def kol_hareket_ettir(hedef_pos, hedef_orn=None, sure=2.0):
     """
     # Calculate IK
     if hedef_orn is None:
-        # Default orientation (facing downward)
+        # Default orientation (ftargetng downward)
         hedef_orn = p.getQuaternionFromEuler([math.pi, 0, 0])
 
     ik_result = p.calculateInverseKinematics(
@@ -123,17 +123,17 @@ def kol_hareket_ettir(hedef_pos, hedef_orn=None, sure=2.0):
     )
 
     # Get only the arm joint angles
-    hedef_acilari = [ik_result[i] for i in kol_eklemleri]
+    hedef_targetlari = [ik_result[i] for i in kol_eklemleri]
 
     # Move
-    adim_sayisi = int(sure * 240)
-    for adim in range(adim_sayisi):
+    no_steps = int(sure * 240)
+    for adim in range(no_steps):
         for i, eklem_idx in enumerate(kol_eklemleri):
             p.setJointMotorControl2(
                 bodyUniqueId=panda,
                 jointIndex=eklem_idx,
                 controlMode=p.POSITION_CONTROL,
-                targetPosition=hedef_acilari[i],
+                targetPosition=hedef_targetlari[i],
                 force=87,
                 maxVelocity=1.0
             )
@@ -165,8 +165,8 @@ def gripper_kontrol(komut, kuvvet=50):
 
 def end_effector_pos():
     """End-effector position"""
-    durum = p.getLinkState(panda, end_effector_index)
-    return durum[0]
+    joint_params = p.getLinkState(panda, end_effector_index)
+    return joint_params[0]
 
 def nesne_olustur(tip, pozisyon, renk, boyut=0.04):
     """Create an object"""
@@ -422,7 +422,7 @@ SOLUTION:
   ✓ Gripper joints: [9,10]
   ✓ End-effector index: 11
   ✓ IK results applied only to the arm joints
-  ✓ Orientation added (downward-facing gripper)
+  ✓ Orientation added (downward-ftargetng gripper)
 
 RESULT:
   ✓✓ The gripper is now positioned correctly

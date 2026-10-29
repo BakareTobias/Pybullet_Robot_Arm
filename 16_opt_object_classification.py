@@ -117,10 +117,10 @@ def ik_hesapla_cached(hedef_pos):
         residualThreshold=0.005  # 0.005 instead of 0.001 (slightly more tolerant)
     )
 
-    hedef_acilari = [ik_result[i] for i in kol_eklemleri]
-    ik_cache[key] = hedef_acilari
+    hedef_targetlari = [ik_result[i] for i in kol_eklemleri]
+    ik_cache[key] = hedef_targetlari
 
-    return hedef_acilari
+    return hedef_targetlari
 
 print(f"  ✓ IK cache ready")
 
@@ -134,15 +134,15 @@ GERCEK_ZAMANLI = True  # Set to False for no visuals but MUCH FASTER execution!
 
 def kol_hareket_ettir_hizli(hedef_pos, sure=1.5):
     """Optimized movement"""
-    hedef_acilari = ik_hesapla_cached(hedef_pos)
+    hedef_targetlari = ik_hesapla_cached(hedef_pos)
 
-    adim_sayisi = int(sure * 180)  # 180 instead of 240 (fewer steps)
+    no_steps = int(sure * 180)  # 180 instead of 240 (fewer steps)
 
-    for _ in range(adim_sayisi):
+    for _ in range(no_steps):
         for i, eklem_idx in enumerate(kol_eklemleri):
             p.setJointMotorControl2(
                 panda, eklem_idx, p.POSITION_CONTROL,
-                targetPosition=hedef_acilari[i],
+                targetPosition=hedef_targetlari[i],
                 force=100,  # 100 instead of 87 (faster movement)
                 maxVelocity=1.5  # 1.5 instead of 1.0 (faster)
             )

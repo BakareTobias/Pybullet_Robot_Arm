@@ -219,11 +219,11 @@ This method is called "Kinematic Grasping".
 """)
 
 # Helper functions
-def position_control_joint(eklem_no, aci):
+def position_control_joint(joint_no, target):
     p.setJointMotorControl2(
-        robot, eklem_no,
+        robot, joint_no,
         p.POSITION_CONTROL,
-        targetPosition=aci,
+        targetPosition=target,
         force=200
     )
 
@@ -232,19 +232,19 @@ def ik_hesapla(x, y, z):
 
 def robot_hareket_ettir(hedef_pos, sure=2.0):
     """Move the robot to the target position (using a trajectory)."""
-    eklem_acilari = ik_hesapla(*hedef_pos)
+    eklem_targetlari = ik_hesapla(*hedef_pos)
 
-    adim_sayisi = int(sure * 240)
-    for _ in range(adim_sayisi):
+    no_steps = int(sure * 240)
+    for _ in range(no_steps):
         for i in range(7):
-            position_control_joint(i, eklem_acilari[i])
+            position_control_joint(i, eklem_targetlari[i])
         p.stepSimulation()
         time.sleep(1./240.)
 
 def end_effector_pozisyonu():
     """Return the current position of the end effector."""
-    durum = p.getLinkState(robot, 6)
-    return durum[0]
+    joint_params = p.getLinkState(robot, 6)
+    return joint_params[0]
 
 # Global variables for grasping/releasing
 tutulan_nesne = None
@@ -463,7 +463,7 @@ NEXT STEP:
 → PROJECT 1: Advanced Pick-and-Place
   - Multiple objects
   - Color recognition
-  - Placing objects in target boxes
+  - Pltargetng objects in target boxes
 """)
 
 input("\nLesson complete! Press ENTER...\n")

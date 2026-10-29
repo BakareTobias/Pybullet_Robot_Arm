@@ -578,7 +578,7 @@ for i, detection in enumerate(detections, 1):
     
     print(f"  [1/3] Detected: {color.upper()}")
     print(f"  [2/3] Location: Pixel ({cx}, {cy})")
-    print(f"  [3/3] Picking and placing to {color.upper()} box...")
+    print(f"  [3/3] Picking and pltargetng to {color.upper()} box...")
     
     try:
         pick_and_place_vision(cx, cy, color)

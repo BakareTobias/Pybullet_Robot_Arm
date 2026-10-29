@@ -112,13 +112,13 @@ def kol_hareket_ettir(hedef_pos, sure=2.0):
         maxNumIterations=100, residualThreshold=0.001
     )
 
-    hedef_acilari = [ik_result[i] for i in kol_eklemleri]
+    hedef_targetlari = [ik_result[i] for i in kol_eklemleri]
 
-    adim_sayisi = int(sure * 240)
-    for _ in range(adim_sayisi):
+    no_steps = int(sure * 240)
+    for _ in range(no_steps):
         for i, eklem_idx in enumerate(kol_eklemleri):
             p.setJointMotorControl2(panda, eklem_idx, p.POSITION_CONTROL,
-                                   targetPosition=hedef_acilari[i],
+                                   targetPosition=hedef_targetlari[i],
                                    force=87, maxVelocity=1.0)
         p.stepSimulation()
         time.sleep(1./240.)
@@ -375,7 +375,7 @@ WHAT WE LEARNED:
 
 REAL-WORLD APPLICATIONS:
   - Warehouse management (product sorting)
-  - Recycling facilities (material separation)
+  - Recycling ftargetlities (material separation)
   - Quality control (color-based inspection)
   - Pharmacy automation (medication sorting)
 

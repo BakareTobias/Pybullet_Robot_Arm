@@ -53,8 +53,8 @@ def position_control_joint(joint_no, joint_angle):
         targetPosition=joint_angle
     )
 
-def simule_et(adim_sayisi):
-    for i in range(adim_sayisi):
+def simulate(no_steps):
+    for i in range(no_steps):
         p.stepSimulation()
         time.sleep(1./240.)
 

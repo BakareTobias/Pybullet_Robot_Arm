@@ -200,17 +200,17 @@ p.resetDebugVisualizerCamera(
     cameraTargetPosition=[0, 0, 0.5]
 )
 
-def position_control_joint(eklem_no, aci):
+def position_control_joint(joint_no, target):
     p.setJointMotorControl2(
         bodyUniqueId=robot,
-        jointIndex=eklem_no,
+        jointIndex=joint_no,
         controlMode=p.POSITION_CONTROL,
-        targetPosition=aci,
+        targetPosition=target,
         force=200,
         maxVelocity=3.0
     )
 
-def simule_et(adim):
+def simulate(adim):
     for _ in range(adim):
         p.stepSimulation()
         time.sleep(1./240.)
@@ -246,26 +246,26 @@ print(f"End  : {bitis_pos}")
 print("\n→ Robot will move LINEARLY (3 seconds)")
 
 # Move to the starting position
-eklem_acilari = ik_hesapla(*baslangic_pos)
+eklem_targetlari = ik_hesapla(*baslangic_pos)
 for i in range(7):
-    position_control_joint(i, eklem_acilari[i])
-simule_et(300)
+    position_control_joint(i, eklem_targetlari[i])
+simulate(300)
 
 print("  Movement starting...")
 sure = 3.0  # seconds
-adim_sayisi = int(sure * 240)  # 240 Hz
+no_steps = int(sure * 240)  # 240 Hz
 
-for adim in range(adim_sayisi):
-    t = adim / adim_sayisi  # 0.0 → 1.0
+for adim in range(no_steps):
+    t = adim / no_steps  # 0.0 → 1.0
 
     # Linear interpolation
     hedef = baslangic_pos + (bitis_pos - baslangic_pos) * t
 
     # IK and movement
     marker_goster(*hedef, renk=[1, 0, 0, 0.8])
-    eklem_acilari = ik_hesapla(*hedef)
+    eklem_targetlari = ik_hesapla(*hedef)
     for i in range(7):
-        position_control_joint(i, eklem_acilari[i])
+        position_control_joint(i, eklem_targetlari[i])
 
     p.stepSimulation()
     time.sleep(1./240.)
@@ -287,15 +287,15 @@ print(f"End  : {bitis_pos}")
 print("\n→ Robot will move using CUBIC interpolation (3 seconds)")
 
 # Return to the start
-eklem_acilari = ik_hesapla(*baslangic_pos)
+eklem_targetlari = ik_hesapla(*baslangic_pos)
 for i in range(7):
-    position_control_joint(i, eklem_acilari[i])
-simule_et(300)
+    position_control_joint(i, eklem_targetlari[i])
+simulate(300)
 
 print("  Movement starting...")
 
-for adim in range(adim_sayisi):
-    t = adim / adim_sayisi  # 0.0 → 1.0
+for adim in range(no_steps):
+    t = adim / no_steps  # 0.0 → 1.0
 
     # Cubic interpolation
     s = 3 * t**2 - 2 * t**3  # Smooth transition
@@ -303,9 +303,9 @@ for adim in range(adim_sayisi):
 
     # IK and movement
     marker_goster(*hedef, renk=[0, 1, 0, 0.8])
-    eklem_acilari = ik_hesapla(*hedef)
+    eklem_targetlari = ik_hesapla(*hedef)
     for i in range(7):
-        position_control_joint(i, eklem_acilari[i])
+        position_control_joint(i, eklem_targetlari[i])
 
     p.stepSimulation()
     time.sleep(1./240.)
@@ -357,9 +357,9 @@ for idx in range(len(waypoints) - 1):
         hedef = baslangic + (bitis - baslangic) * s
 
         marker_goster(*hedef, renk=[0, 0, 1, 0.8])
-        eklem_acilari = ik_hesapla(*hedef)
+        eklem_targetlari = ik_hesapla(*hedef)
         for i in range(7):
-            position_control_joint(i, eklem_acilari[i])
+            position_control_joint(i, eklem_targetlari[i])
 
         p.stepSimulation()
         time.sleep(1./240.)

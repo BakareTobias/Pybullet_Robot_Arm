@@ -115,12 +115,12 @@ input("\nPress ENTER to continue...\n")
 # =====================================================
 # HELPER FUNCTIONS
 # =====================================================
-def position_control_joint(eklem_no, aci):
+def position_control_joint(joint_no, target):
     p.setJointMotorControl2(
         bodyUniqueId=robot,
-        jointIndex=eklem_no,
+        jointIndex=joint_no,
         controlMode=p.POSITION_CONTROL,
-        targetPosition=aci,
+        targetPosition=target,
         force=200,
         maxVelocity=2.0
     )
@@ -185,10 +185,10 @@ for idx, hedef in enumerate(guvenli_hedefler, 1):
     print(f"\n  Target {idx}: {hedef}")
 
     marker_goster(*hedef, renk=[0, 1, 0, 0.8])
-    eklem_acilari = ik_hesapla(*hedef)
+    eklem_targetlari = ik_hesapla(*hedef)
 
     for i in range(7):
-        position_control_joint(i, eklem_acilari[i])
+        position_control_joint(i, eklem_targetlari[i])
 
     # Check for collisions while moving
     for _ in range(300):
@@ -217,10 +217,10 @@ print("  (This target is inside obstacle 1!)")
 marker_goster(*tehlikeli_hedef, renk=[1, 0, 0, 0.8])
 
 print("\n→ The robot will move toward the dangerous target...")
-eklem_acilari = ik_hesapla(*tehlikeli_hedef)
+eklem_targetlari = ik_hesapla(*tehlikeli_hedef)
 
 for i in range(7):
-    position_control_joint(i, eklem_acilari[i])
+    position_control_joint(i, eklem_targetlari[i])
 
 # Monitor during movement
 carpti_mi = False
@@ -295,18 +295,18 @@ for idx in range(len(waypoints) - 1):
     print(f"\n  Segment {idx+1}/{len(waypoints)-1}")
 
     # Smooth movement using cubic interpolation
-    adim_sayisi = 200
-    for adim in range(adim_sayisi):
-        t = adim / adim_sayisi
+    no_steps = 200
+    for adim in range(no_steps):
+        t = adim / no_steps
         s = 3 * t**2 - 2 * t**3  # Cubic
 
         hedef_anlik = baslangic_wp + (bitis_wp - baslangic_wp) * s
 
         marker_goster(*hedef_anlik, renk=[0, 1, 1, 0.8])
-        eklem_acilari = ik_hesapla(*hedef_anlik)
+        eklem_targetlari = ik_hesapla(*hedef_anlik)
 
         for i in range(7):
-            position_control_joint(i, eklem_acilari[i])
+            position_control_joint(i, eklem_targetlari[i])
 
         p.stepSimulation()
         time.sleep(1./240.)
@@ -346,10 +346,10 @@ print("\n→ The robot will stop if it gets too close to an obstacle...")
 hedef_dinamik = [0.35, 0.0, 0.4]
 marker_goster(*hedef_dinamik, renk=[1, 0.5, 0, 0.8])
 
-eklem_acilari = ik_hesapla(*hedef_dinamik)
+eklem_targetlari = ik_hesapla(*hedef_dinamik)
 
 for i in range(7):
-    position_control_joint(i, eklem_acilari[i])
+    position_control_joint(i, eklem_targetlari[i])
 
 for adim in range(500):
     carpti, mesafe = carpisma_var_mi(guvenlik_mesafesi=0.12)

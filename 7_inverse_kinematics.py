@@ -63,17 +63,17 @@ p.resetDebugVisualizerCamera(
     cameraTargetPosition=[0, 0, 0.5]
 )
 
-def position_control_joint(eklem_no, aci):
+def position_control_joint(joint_no, target):
     p.setJointMotorControl2(
         bodyUniqueId=robot,
-        jointIndex=eklem_no,
+        jointIndex=joint_no,
         controlMode=p.POSITION_CONTROL,
-        targetPosition=aci,
+        targetPosition=target,
         force=200,
         maxVelocity=2.0
     )
 
-def simule_et(adim):
+def simulate(adim):
     for _ in range(adim):
         p.stepSimulation()
         time.sleep(1./240.)
@@ -106,19 +106,19 @@ def pybullet_ik(hedef_x, hedef_y, hedef_z):
         hedef_x, hedef_y, hedef_z: Target position
 
     Returns:
-        eklem_acilari: Angles for 7 joints (tuple)
+        eklem_targetlari: Angles for 7 joints (tuple)
     """
     # End-effector = Link 6
     end_effector_index = 6
 
     # Calculate IK
-    eklem_acilari = p.calculateInverseKinematics(
+    eklem_targetlari = p.calculateInverseKinematics(
         bodyUniqueId=robot,
         endEffectorLinkIndex=end_effector_index,
         targetPosition=[hedef_x, hedef_y, hedef_z]
     )
 
-    return eklem_acilari
+    return eklem_targetlari
 
 # =====================================================
 # TEST 1: First IK Test
@@ -134,21 +134,21 @@ print(f"\nTarget position: x={hedef[0]}, y={hedef[1]}, z={hedef[2]}")
 hedef_goster(hedef[0], hedef[1], hedef[2])
 
 print("  → Calculating IK...")
-eklem_acilari = pybullet_ik(hedef[0], hedef[1], hedef[2])
+eklem_targetlari = pybullet_ik(hedef[0], hedef[1], hedef[2])
 
 print(f"  ✓ Calculated joint angles (degrees):")
 for i in range(7):
-    print(f"    Joint {i}: {math.degrees(eklem_acilari[i]):6.1f}°")
+    print(f"    Joint {i}: {math.degrees(eklem_targetlari[i]):6.1f}°")
 
 print("\n  → Moving the robot to the calculated angles...")
 for i in range(7):
-    position_control_joint(i, eklem_acilari[i])
+    position_control_joint(i, eklem_targetlari[i])
 
-simule_et(500)
+simulate(500)
 
 # Check the actual position
-durum = p.getLinkState(robot, 6)
-gercek_pos = durum[0]
+joint_params = p.getLinkState(robot, 6)
+gercek_pos = joint_params[0]
 print(f"\n  ✓ The robot hand reached the target!")
 print(f"    Target   : ({hedef[0]:.3f}, {hedef[1]:.3f}, {hedef[2]:.3f})")
 print(f"    Actual   : ({gercek_pos[0]:.3f}, {gercek_pos[1]:.3f}, {gercek_pos[2]:.3f})")
@@ -187,17 +187,17 @@ for idx, (hedef, renk) in enumerate(hedefler, 1):
     hedef_goster(x, y, z, renk)
 
     # Calculate IK
-    eklem_acilari = pybullet_ik(x, y, z)
+    eklem_targetlari = pybullet_ik(x, y, z)
 
     # Move the robot
     for i in range(7):
-        position_control_joint(i, eklem_acilari[i])
+        position_control_joint(i, eklem_targetlari[i])
 
-    simule_et(400)
+    simulate(400)
 
     # Verify
-    durum = p.getLinkState(robot, 6)
-    gercek = durum[0]
+    joint_params = p.getLinkState(robot, 6)
+    gercek = joint_params[0]
     hata = math.sqrt((x-gercek[0])**2 + (y-gercek[1])**2 + (z-gercek[2])**2)
     print(f"  ✓ Reached! Error: {hata*1000:.1f} mm")
 
@@ -222,17 +222,17 @@ print("  (The robot's maximum reach is around ~1.5m)")
 hedef_goster(hedef_uzak[0], hedef_uzak[1], hedef_uzak[2], [1, 0.5, 0, 0.8])
 
 print("\n  → Calculating IK...")
-eklem_acilari = pybullet_ik(hedef_uzak[0], hedef_uzak[1], hedef_uzak[2])
+eklem_targetlari = pybullet_ik(hedef_uzak[0], hedef_uzak[1], hedef_uzak[2])
 
 print("  → The robot is moving to the nearest position...")
 for i in range(7):
-    position_control_joint(i, eklem_acilari[i])
+    position_control_joint(i, eklem_targetlari[i])
 
-simule_et(500)
+simulate(500)
 
 # Actual position
-durum = p.getLinkState(robot, 6)
-gercek = durum[0]
+joint_params = p.getLinkState(robot, 6)
+gercek = joint_params[0]
 hata = math.sqrt(
     (hedef_uzak[0]-gercek[0])**2 +
     (hedef_uzak[1]-gercek[1])**2 +
@@ -283,12 +283,12 @@ while time.time() - baslangic < 10:
 
     # IK and movement
     hedef_goster(x, y, z)
-    eklem_acilari = pybullet_ik(x, y, z)
+    eklem_targetlari = pybullet_ik(x, y, z)
 
     for i in range(7):
-        position_control_joint(i, eklem_acilari[i])
+        position_control_joint(i, eklem_targetlari[i])
 
-    simule_et(100)
+    simulate(100)
 
 print("\n\n✓ Interactive mode complete!")
 
@@ -307,7 +307,7 @@ WHAT WE LEARNED:
 ✓ Error calculation
 
 USAGE:
-  eklem_acilari = p.calculateInverseKinematics(
+  eklem_targetlari = p.calculateInverseKinematics(
       robot,
       end_effector_index,
       [hedef_x, hedef_y, hedef_z]

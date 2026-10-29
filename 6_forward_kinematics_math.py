@@ -93,7 +93,7 @@ print("="*60)
 print("SECTION 2: Test with Different Angles")
 print("="*60)
 
-test_acilar = [
+test_targetlar = [
     (0, 0, "Both joints at 0°"),
     (90, 0, "Joint 1: 90°, Joint 2: 0°"),
     (45, 45, "Both joints at 45°"),
@@ -101,7 +101,7 @@ test_acilar = [
     (0, 90, "Joint 1: 0°, Joint 2: 90°")
 ]
 
-for theta1_derece, theta2_derece, aciklama in test_acilar:
+for theta1_derece, theta2_derece, targetklama in test_targetlar:
     # Convert degrees to radians
     theta1 = math.radians(theta1_derece)
     theta2 = math.radians(theta2_derece)
@@ -109,7 +109,7 @@ for theta1_derece, theta2_derece, aciklama in test_acilar:
     # Calculate Forward Kinematics
     x, y = forward_kinematics(theta1, theta2, L1, L2)
 
-    print(f"\n{aciklama}")
+    print(f"\n{targetklama}")
     print(f"  Input : θ1={theta1_derece}°, θ2={theta2_derece}°")
     print(f"  Output: x={x:.3f}m, y={y:.3f}m")
 
@@ -241,15 +241,15 @@ print("✓ PyBullet started")
 robot = p.loadURDF("kuka_iiwa/model.urdf", [0, 0, 0], useFixedBase=True)
 print("✓ Kuka robot loaded")
 
-def position_control_joint(eklem_no, aci):
+def position_control_joint(joint_no, target):
     p.setJointMotorControl2(
         bodyUniqueId=robot,
-        jointIndex=eklem_no,
+        jointIndex=joint_no,
         controlMode=p.POSITION_CONTROL,
-        targetPosition=aci
+        targetPosition=target
     )
 
-def simule_et(adim):
+def simulate(adim):
     for _ in range(adim):
         p.stepSimulation()
         time.sleep(1./240.)
@@ -269,11 +269,11 @@ for theta1, theta2 in test_kombinasyonlar:
     # Give PyBullet the same angles
     position_control_joint(0, theta1)
     position_control_joint(1, theta2)
-    simule_et(300)
+    simulate(300)
 
     # PyBullet's calculation
-    durum = p.getLinkState(robot, 6)
-    x_pybullet, y_pybullet, z_pybullet = durum[0]
+    joint_params = p.getLinkState(robot, 6)
+    x_pybullet, y_pybullet, z_pybullet = joint_params[0]
 
     print(f"\nθ1={math.degrees(theta1):.0f}°, θ2={math.degrees(theta2):.0f}°")
     print(f"  Our calculation: x={x_bizim:.3f}, y={y_bizim:.3f}")
