@@ -139,12 +139,12 @@ def marker_goster(x, y, z, color=[0, 1, 0, 0.8]):
     gorsel = p.createVisualShape(p.GEOM_SPHERE, radius=0.05, rgbaColor=color)
     marker = p.createMultiBody(0, baseVisualShapeIndex=gorsel, basePosition=[x, y, z])
 
-def carpisma_var_mi(guvenlik_mesafesi=0.05):
+def carpisma_var_mi(guvenlik_errorsi=0.05):
     """
     Is the robot too close to any obstacle?
 
     Parameters:
-        guvenlik_mesafesi: Minimum safe distance (meters)
+        guvenlik_errorsi: Minimum safe distance (meters)
 
     Returns:
         True: Collision risk detected
@@ -155,15 +155,15 @@ def carpisma_var_mi(guvenlik_mesafesi=0.05):
         yakin_points = p.getClosestPoints(
             bodyA=robot,
             bodyB=engel,
-            distance=guvenlik_mesafesi  # Report if closer than this distance
+            distance=guvenlik_errorsi  # Report if closer than this distance
         )
 
         if len(yakin_points) > 0:
             # Find the closest distance
-            min_mesafe = min([nokta[8] for nokta in yakin_points])
+            min_error = min([coordinates[8] for coordinates in yakin_points])
 
-            if min_mesafe < guvenlik_mesafesi:
-                return True, min_mesafe
+            if min_error < guvenlik_errorsi:
+                return True, min_error
 
     return False, float('inf')
 
@@ -195,9 +195,9 @@ for idx, target in enumerate(guvenli_targets, 1):
         p.stepSimulation()
         time.sleep(1./240.)
 
-        carpti, mesafe = carpisma_var_mi(guvenlik_mesafesi=0.1)
+        carpti, error = carpisma_var_mi(guvenlik_errorsi=0.1)
         if carpti:
-            print(f"    ⚠ Too close to an obstacle! Distance: {mesafe*100:.1f} cm")
+            print(f"    ⚠ Too close to an obstacle! Distance: {error*100:.1f} cm")
 
     print(f"    ✓ Target reached (safe)")
 
@@ -228,15 +228,15 @@ for steps in range(400):
     p.stepSimulation()
     time.sleep(1./240.)
 
-    carpti, mesafe = carpisma_var_mi(guvenlik_mesafesi=0.1)
+    carpti, error = carpisma_var_mi(guvenlik_errorsi=0.1)
 
     if carpti and not carpti_mi:
-        print(f"  ⚠⚠⚠ WARNING: Approached the obstacle to within {mesafe*100:.1f} cm!")
+        print(f"  ⚠⚠⚠ WARNING: Approached the obstacle to within {error*100:.1f} cm!")
         carpti_mi = True
 
     # Report the state every 50 steps
     if steps % 50 == 0 and carpti:
-        print(f"    Step {steps}: Distance to obstacle = {mesafe*100:.1f} cm")
+        print(f"    Step {steps}: Distance to obstacle = {error*100:.1f} cm")
 
 if carpti_mi:
     print("\n  ✗ Collision risk detected!")
@@ -259,19 +259,19 @@ Strategy: Pass OVER the obstacles
   3. Above the target → Move down
 """)
 
-baslangic = [0.5, 0.5, 0.5]
+start_time = [0.5, 0.5, 0.5]
 target_son = [0.3, -0.3, 0.4]  # Near the obstacles
 
 guvenli_yukseklik = 0.9  # Above the obstacles
 
-print(f"\nStart: {baslangic}")
+print(f"\nStart: {start_time}")
 print(f"Target: {target_son}")
 print(f"Safe height: {guvenli_yukseklik}m")
 
 # Create waypoints
 waypoints = [
-    np.array(baslangic),                                    # 1. Start
-    np.array([baslangic[0], baslangic[1], guvenli_yukseklik]),  # 2. Move up
+    np.array(start_time),                                    # 1. Start
+    np.array([start_time[0], start_time[1], guvenli_yukseklik]),  # 2. Move up
     np.array([target_son[0], target_son[1], guvenli_yukseklik]),  # 3. Move above the target
     np.array(target_son)                                     # 4. Move down
 ]
@@ -289,7 +289,7 @@ print("\n→ The robot will move safely through the waypoints...")
 
 # Move to each waypoint
 for idx in range(len(waypoints) - 1):
-    baslangic_wp = waypoints[idx]
+    start_time_wp = waypoints[idx]
     bitis_wp = waypoints[idx + 1]
 
     print(f"\n  Segment {idx+1}/{len(waypoints)-1}")
@@ -300,7 +300,7 @@ for idx in range(len(waypoints) - 1):
         t = steps / no_steps
         s = 3 * t**2 - 2 * t**3  # Cubic
 
-        target_anlik = baslangic_wp + (bitis_wp - baslangic_wp) * s
+        target_anlik = start_time_wp + (bitis_wp - start_time_wp) * s
 
         marker_goster(*target_anlik, color=[0, 1, 1, 0.8])
         eklem_targetlari = ik_hesapla(*target_anlik)
@@ -312,9 +312,9 @@ for idx in range(len(waypoints) - 1):
         time.sleep(1./240.)
 
         # Collision check
-        carpti, mesafe = carpisma_var_mi(guvenlik_mesafesi=0.15)
+        carpti, error = carpisma_var_mi(guvenlik_errorsi=0.15)
         if carpti and steps % 50 == 0:
-            print(f"    ⚠ Distance to obstacle: {mesafe*100:.1f} cm (but at a safe height!)")
+            print(f"    ⚠ Distance to obstacle: {error*100:.1f} cm (but at a safe height!)")
 
     print(f"    ✓ Reached waypoint {idx+2}")
 
@@ -352,15 +352,15 @@ for i in range(7):
     position_control_joint(i, eklem_targetlari[i])
 
 for steps in range(500):
-    carpti, mesafe = carpisma_var_mi(guvenlik_mesafesi=0.12)
+    carpti, error = carpisma_var_mi(guvenlik_errorsi=0.12)
 
     if carpti:
-        if mesafe < 0.08:  # Too close!
-            print(f"\n  🛑 STOP! {mesafe*100:.1f} cm from the obstacle - too close!")
+        if error < 0.08:  # Too close!
+            print(f"\n  🛑 STOP! {error*100:.1f} cm from the obstacle - too close!")
             print("     An alternative path would be searched for in a real application.")
             break
         elif steps % 50 == 0:
-            print(f"  ⚠ Caution: obstacle at a distance of {mesafe*100:.1f} cm")
+            print(f"  ⚠ Caution: obstacle at a distance of {error*100:.1f} cm")
 
     p.stepSimulation()
     time.sleep(1./240.)

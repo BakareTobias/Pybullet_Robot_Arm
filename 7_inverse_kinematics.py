@@ -272,8 +272,8 @@ print("(In a real application, mouse clicks would be used)\n")
 
 import random
 
-baslangic = time.time()
-while time.time() - baslangic < 10:
+start_time = time.time()
+while time.time() - start_time < 10:
     # Random target (within the workspace)
     x = random.uniform(0.2, 0.6)
     y = random.uniform(-0.3, 0.3)

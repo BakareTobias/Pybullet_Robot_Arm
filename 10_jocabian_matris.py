@@ -309,7 +309,7 @@ Different starting points can lead to different solutions for the same target.
 """)
 
 target = (1.0, 1.0)
-baslangiclar = [
+start_timelar = [
     (0, 0),
     (math.radians(45), math.radians(45)),
     (math.radians(-30), math.radians(60))
@@ -320,7 +320,7 @@ print("\nDifferent starting points:")
 
 cozumler = []
 
-for idx, (t1_init, t2_init) in enumerate(baslangiclar, 1):
+for idx, (t1_init, t2_init) in enumerate(start_timelar, 1):
     print(f"\n{idx}. Initial: θ₁={math.degrees(t1_init):.0f}°, θ₂={math.degrees(t2_init):.0f}°")
 
     t1, t2, iters, errs = inverse_kinematics_jacobian(
@@ -405,12 +405,12 @@ t1, t2, iters, errs = inverse_kinematics_jacobian(
 )
 
 x_final, y_final = forward_kinematics(t1, t2)
-mesafe = np.sqrt(x_final**2 + y_final**2)
+error = np.sqrt(x_final**2 + y_final**2)
 
 print(f"\n✓ Algorithm stopped (maximum iterations)")
 print(f"  Nearest position: ({x_final:.3f}, {y_final:.3f})")
 print(f"  Target: ({uzak_target[0]}, {uzak_target[1]})")
-print(f"  Reached distance: {mesafe:.3f}m")
+print(f"  Reached distance: {error:.3f}m")
 print(f"  Error: {errs[-1]:.3f}m = {errs[-1]*100:.1f}cm")
 print("\n  The robot moved to the nearest point possible!")
 

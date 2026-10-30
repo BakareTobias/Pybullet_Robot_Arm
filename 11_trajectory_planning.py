@@ -54,19 +54,19 @@ print("="*60)
 print("SECTION 2: Linear Interpolation (The Simplest Method)")
 print("="*60)
 
-def linear_interpolation(baslangic, bitis, t):
+def linear_interpolation(start_time, bitis, t):
     """
     Performs linear interpolation between two points.
 
     Parameters:
-        baslangic: Starting value
+        start_time: Starting value
         bitis: Ending value
         t: Time (0.0 = start, 1.0 = end)
 
     Returns:
         Intermediate value
     """
-    return baslangic + (bitis - baslangic) * t
+    return start_time + (bitis - start_time) * t
 
 print("\nFormula: p(t) = p_start + (p_end - p_start) * t")
 print("  t = 0.0 → Start")
@@ -83,12 +83,12 @@ input("Press ENTER to continue...\n")
 
 # Plot the graph
 t_dizi = np.linspace(0, 1, 100)
-pozisyon = [linear_interpolation(10, 50, t) for t in t_dizi]
+position = [linear_interpolation(10, 50, t) for t in t_dizi]
 hiz = [50 - 10 for _ in t_dizi]  # Constant velocity (derivative)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
 
-ax1.plot(t_dizi, pozisyon, 'b-', linewidth=2)
+ax1.plot(t_dizi, position, 'b-', linewidth=2)
 ax1.set_ylabel('Position', fontsize=12)
 ax1.set_title('Linear Interpolation', fontsize=14, fontweight='bold')
 ax1.grid(True, alpha=0.3)
@@ -115,7 +115,7 @@ print("="*60)
 print("SECTION 3: Cubic Interpolation (Better!)")
 print("="*60)
 
-def cubic_interpolation(baslangic, bitis, t):
+def cubic_interpolation(start_time, bitis, t):
     """
     Cubic interpolation (smooth start and end).
 
@@ -123,7 +123,7 @@ def cubic_interpolation(baslangic, bitis, t):
     """
     # Smooth transition function
     s = 3 * t**2 - 2 * t**3
-    return baslangic + (bitis - baslangic) * s
+    return start_time + (bitis - start_time) * s
 
 print("\nFormula: p(t) = p_start + (p_end - p_start) * (3t² - 2t³)")
 print("  This formula smooths the velocity:")
@@ -238,15 +238,15 @@ print("\n" + "="*60)
 print("TEST 1: Linear Trajectory")
 print("="*60)
 
-baslangic_pos = np.array([0.3, 0.3, 0.5])
+start_time_pos = np.array([0.3, 0.3, 0.5])
 bitis_pos = np.array([0.5, -0.2, 0.7])
 
-print(f"\nStart: {baslangic_pos}")
+print(f"\nStart: {start_time_pos}")
 print(f"End  : {bitis_pos}")
 print("\n→ Robot will move LINEARLY (3 seconds)")
 
 # Move to the starting position
-eklem_targetlari = ik_hesapla(*baslangic_pos)
+eklem_targetlari = ik_hesapla(*start_time_pos)
 for i in range(7):
     position_control_joint(i, eklem_targetlari[i])
 simulate(300)
@@ -259,7 +259,7 @@ for steps in range(no_steps):
     t = steps / no_steps  # 0.0 → 1.0
 
     # Linear interpolation
-    target = baslangic_pos + (bitis_pos - baslangic_pos) * t
+    target = start_time_pos + (bitis_pos - start_time_pos) * t
 
     # IK and movement
     marker_goster(*target, color=[1, 0, 0, 0.8])
@@ -282,12 +282,12 @@ print("TEST 2: Cubic Trajectory (Smoother)")
 print("="*60)
 
 # Same start and end points
-print(f"\nStart: {baslangic_pos}")
+print(f"\nStart: {start_time_pos}")
 print(f"End  : {bitis_pos}")
 print("\n→ Robot will move using CUBIC interpolation (3 seconds)")
 
 # Return to the start
-eklem_targetlari = ik_hesapla(*baslangic_pos)
+eklem_targetlari = ik_hesapla(*start_time_pos)
 for i in range(7):
     position_control_joint(i, eklem_targetlari[i])
 simulate(300)
@@ -299,7 +299,7 @@ for steps in range(no_steps):
 
     # Cubic interpolation
     s = 3 * t**2 - 2 * t**3  # Smooth transition
-    target = baslangic_pos + (bitis_pos - baslangic_pos) * s
+    target = start_time_pos + (bitis_pos - start_time_pos) * s
 
     # IK and movement
     marker_goster(*target, color=[0, 1, 0, 0.8])
@@ -333,7 +333,7 @@ waypoints = [
 
 print(f"\nThe robot will pass through {len(waypoints)} waypoints:")
 for idx, wp in enumerate(waypoints, 1):
-    print(f"  Nokta {idx}: {wp}")
+    print(f"  coordinates {idx}: {wp}")
 
 # Show the points (persistent spheres)
 for wp in waypoints:
@@ -343,10 +343,10 @@ for wp in waypoints:
 print("\n→ The robot will pass through all points...")
 
 for idx in range(len(waypoints) - 1):
-    baslangic = waypoints[idx]
+    start_time = waypoints[idx]
     bitis = waypoints[idx + 1]
 
-    print(f"  Segment {idx+1}: {baslangic} → {bitis}")
+    print(f"  Segment {idx+1}: {start_time} → {bitis}")
 
     segment_sure = 2.0
     segment_steps = int(segment_sure * 240)
@@ -354,7 +354,7 @@ for idx in range(len(waypoints) - 1):
     for steps in range(segment_steps):
         t = steps / segment_steps
         s = 3 * t**2 - 2 * t**3  # Cubic
-        target = baslangic + (bitis - baslangic) * s
+        target = start_time + (bitis - start_time) * s
 
         marker_goster(*target, color=[0, 0, 1, 0.8])
         eklem_targetlari = ik_hesapla(*target)

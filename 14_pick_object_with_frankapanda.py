@@ -168,7 +168,7 @@ def end_effector_pos():
     joint_params = p.getLinkState(panda, end_effector_index)
     return joint_params[0]
 
-def nesne_olustur(tip, pozisyon, color, boyut=0.04):
+def nesne_olustur(tip, position, color, boyut=0.04):
     """Create an object"""
     if tip == "box":
         collision = p.createCollisionShape(p.GEOM_BOX,
@@ -184,7 +184,7 @@ def nesne_olustur(tip, pozisyon, color, boyut=0.04):
         baseMass=0.05,
         baseCollisionShapeIndex=collision,
         baseVisualShapeIndex=visual,
-        basePosition=pozisyon
+        basePosition=position
     )
     return nesne
 
@@ -291,12 +291,12 @@ kol_hareket_ettir(yakin, sure=2.0)
 
 # Check the final position
 ee_pos = end_effector_pos()
-mesafe = math.sqrt(
+error = math.sqrt(
     (ee_pos[0]-kutu_pos[0])**2 +
     (ee_pos[1]-kutu_pos[1])**2 +
     (ee_pos[2]-kutu_pos[2])**2
 )
-print(f"     Distance between end-effector and cube: {mesafe*100:.2f} cm")
+print(f"     Distance between end-effector and cube: {error*100:.2f} cm")
 
 # STEP 4: Close
 print("  4. Closing the gripper...")
@@ -312,11 +312,11 @@ kol_hareket_ettir(yukari, sure=2.0)
 
 # Check whether the cube is in the air
 yeni_kutu_pos, _ = p.getBasePositionAndOrientation(test_kutu)
-kaldirma_mesafesi = yeni_kutu_pos[2] - kutu_pos[2]
+kaldirma_errorsi = yeni_kutu_pos[2] - kutu_pos[2]
 
-print(f"\n✓ Lift distance: {kaldirma_mesafesi*100:.1f} cm")
+print(f"\n✓ Lift distance: {kaldirma_errorsi*100:.1f} cm")
 
-if kaldirma_mesafesi > 0.15:
+if kaldirma_errorsi > 0.15:
     print("  ✓✓ SUCCESS! The cube was grasped and lifted! 🎉")
 
     # STEP 6: Move it to a new location
@@ -340,7 +340,7 @@ if kaldirma_mesafesi > 0.15:
 
 else:
     print("  ✗ The cube could not be grasped. The problem persists...")
-    print(f"    Debug: The cube lifted only {kaldirma_mesafesi*100:.1f} cm")
+    print(f"    Debug: The cube lifted only {kaldirma_errorsi*100:.1f} cm")
 
 input("\nPress ENTER to continue...\n")
 
@@ -374,7 +374,7 @@ for _ in range(180):
 
 print("\n→ Picking up objects...")
 
-target_merkez = [0.25, 0.0, 0.43]
+target_center = [0.25, 0.0, 0.43]
 
 for idx, nesne in enumerate(nesneler):
     print(f"\n  Processing object {idx+1}/3...")
@@ -392,9 +392,9 @@ for idx, nesne in enumerate(nesneler):
 
     # Place
     offset = (idx - 1) * 0.06
-    target = [target_merkez[0], target_merkez[1] + offset, target_merkez[2] + 0.25]
+    target = [target_center[0], target_center[1] + offset, target_center[2] + 0.25]
     kol_hareket_ettir(target, sure=2.0)
-    kol_hareket_ettir([target[0], target[1], target_merkez[2] + 0.05], sure=1.0)
+    kol_hareket_ettir([target[0], target[1], target_center[2] + 0.05], sure=1.0)
     gripper_kontrol("open")
 
     for _ in range(60):

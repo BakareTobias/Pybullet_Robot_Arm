@@ -49,7 +49,7 @@ def read_joint_state(joint_no):
     joint_params = p.getJointState(robot, joint_no)
     return joint_params[0]  # Angle
 
-def end_effector_pozisyonu():
+def end_effector_position():
     """Return the end-effector position."""
     # The last link (end-effector) in Kuka IIWA is usually link 6 or 7
     num_links = p.getNumJoints(robot)
@@ -62,9 +62,9 @@ def simulate(no_steps):
     """Run the simulation."""
     for i in range(no_steps):
         p.stepSimulation()
-        time.sleep(1./240.)
+        time.sleep(1./2400.)
 
-def marker_olustur(x, y, z, color=[1, 0, 0, 0.7]):
+def visualize_target(x, y, z, color=[1, 0, 0, 0.7]):
     """Create a marker to visualize the target position."""
     visual_shape = p.createVisualShape(
         shapeType=p.GEOM_SPHERE,
@@ -81,24 +81,24 @@ def marker_olustur(x, y, z, color=[1, 0, 0, 0.7]):
 # =====================================================
 # INVERSE KINEMATICS FUNCTION
 # =====================================================
-def inverse_kinematics(target_pozisyon, target_orientasyon=None):
+def inverse_kinematics(target_position, target_orientation=None):
     """
     Calculate the joint angles required to reach the target position.
     
     Args:
-        target_pozisyon: (x, y, z) target position
-        target_orientasyon: (x, y, z, w) quaternion (optional)
+        target_position: (x, y, z) target position
+        target_orientation: (x, y, z, w) quaternion (optional)
     
     Returns:
-        eklem_targetlari: List of joint angles (radians)
+        joint_angles: List of joint angles (radians)
     """
     num_joints = p.getNumJoints(robot)
     end_effector_link = num_joints - 1
     
     # Use PyBullet's built-in IK solver
-    if target_orientasyon is None:
+    if target_orientation is None:
         # Position target only (orientation does not matter)
-        target_orientasyon = [0, 0, 0, 1]  # Default quaternion
+        target_orientation = [0, 0, 0, 1]  # Default quaternion
     
     # IK solver parameters
     ik_solver = 0  # 0 = ikSolver, 1 = ikSolverPosOnly
@@ -121,8 +121,8 @@ def inverse_kinematics(target_pozisyon, target_orientasyon=None):
     ik_result = p.calculateInverseKinematics(
         bodyUniqueId=robot,
         endEffectorLinkIndex=end_effector_link,
-        targetPosition=target_pozisyon,
-        targetOrientation=target_orientasyon,
+        targetPosition=target_position,
+        targetOrientation=target_orientation,
         lowerLimits=[-math.pi] * len(movable_joints),
         upperLimits=[math.pi] * len(movable_joints),
         jointRanges=[2*math.pi] * len(movable_joints),
@@ -145,12 +145,12 @@ target_x, target_y, target_z = 0.4, 0.3, 0.6
 print(f"\nTarget position: ({target_x:.2f}, {target_y:.2f}, {target_z:.2f})")
 
  # Create a marker
-marker = marker_olustur(target_x, target_y, target_z, [1, 0, 0, 0.7])
+marker = visualize_target(target_x, target_y, target_z, [1, 0, 0, 0.7])
 print("✓ The red marker shows the target position")
 
 # Calculate IK
 print("\nCalculating Inverse Kinematics...")
-eklem_targetlari = inverse_kinematics([target_x, target_y, target_z])
+joint_targets = inverse_kinematics([target_x, target_y, target_z])
 
 # Find movable joints
 num_joints = p.getNumJoints(robot)
@@ -163,31 +163,31 @@ for i in range(num_joints):
 # Move the joints to the calculated angles
 print(f"\nCalculated joint angles:")
 for idx, joint_idx in enumerate(movable_joints[:7]):  # First 7 joints
-    target = eklem_targetlari[idx]
+    target = joint_targets[idx]
     info = p.getJointInfo(robot, joint_idx)
-    eklem_adi = info[1].decode('utf-8')
-    print(f"  Joint {joint_idx} ({eklem_adi}): {math.degrees(target):.2f}°")
+    joint_velocity = info[1].decode('utf-8')
+    print(f"  Joint {joint_idx} ({joint_velocity}): {math.degrees(target):.2f}°")
     position_control_joint(joint_idx, target)
 
 # Wait for the movement
 print("\nRobot moving to the target...")
-simulate(500)
+simulate(2000)
 
 # Check the results
-gercek_pozisyon = end_effector_pozisyonu()
-mesafe = math.sqrt(
-    (gercek_pozisyon[0] - target_x)**2 +
-    (gercek_pozisyon[1] - target_y)**2 +
-    (gercek_pozisyon[2] - target_z)**2
+link_position = end_effector_position()
+error = math.sqrt(
+    (link_position[0] - target_x)**2 +
+    (link_position[1] - target_y)**2 +
+    (link_position[2] - target_z)**2
 )
 
 print(f"\n✓ Movement complete!")
 print(f"  Target position: ({target_x:.3f}, {target_y:.3f}, {target_z:.3f})")
-print(f"  Actual position: ({gercek_pozisyon[0]:.3f}, {gercek_pozisyon[1]:.3f}, {gercek_pozisyon[2]:.3f})")
-print(f"  Distance error: {mesafe*1000:.2f} mm")
+print(f"  Actual position: ({link_position[0]:.3f}, {link_position[1]:.3f}, {link_position[2]:.3f})")
+print(f"  Distance error: {error*1000:.2f} mm")
 
 input("\nPress ENTER to continue...")
-
+p.removeBody(marker)#remove task 1 marker
 # =====================================================
 # TEST 2: Multiple Target Positions
 # =====================================================
@@ -209,30 +209,31 @@ for i, (target_pos, color) in enumerate(targets):
     print(f"[Target {i+1}] Position: ({target_pos[0]:.2f}, {target_pos[1]:.2f}, {target_pos[2]:.2f})")
     
     # Create a marker
-    marker = marker_olustur(target_pos[0], target_pos[1], target_pos[2], color)
+    marker = visualize_target(target_pos[0], target_pos[1], target_pos[2], color)
     
     # Calculate IK
-    eklem_targetlari = inverse_kinematics(target_pos)
+    joint_targets = inverse_kinematics(target_pos)
     
     # Move the joints
     for idx, joint_idx in enumerate(movable_joints[:7]):
-        position_control_joint(joint_idx, eklem_targetlari[idx])
+        position_control_joint(joint_idx, joint_targets[idx])
     
     # Wait for the movement
-    simulate(400)
+    simulate(40)
     
     # Check the result
-    joint_pos = end_effector_pozisyonu()
-    mesafe = math.sqrt(
+    joint_pos = end_effector_position()
+    error = math.sqrt(
         (joint_pos[0] - target_pos[0])**2 +
         (joint_pos[1] - target_pos[1])**2 +
         (joint_pos[2] - target_pos[2])**2
     )
     
     print(f"  → Actual: ({joint_pos[0]:.3f}, {joint_pos[1]:.3f}, {joint_pos[2]:.3f})")
-    print(f"  → Error: {mesafe*1000:.2f} mm\n")
+    print(f"  → Error: {error*1000:.2f} mm\n")
     
     time.sleep(0.5)  # Brief pause
+    p.removeBody(marker)
 
 input("\nPress ENTER to continue...")
 
@@ -245,39 +246,40 @@ print("="*60)
 print("The robot will draw a circle\n")
 
 # Circle parameters
-merkez = [0.4, 0.0, 0.6]
-yaricap = 0.15
-nokta_sayisi = 20
+center = [0.4, 0.0, 0.6]
+radius = 0.15
+no_points = 20
 
-print(f"Circle center: {merkez}")
-print(f"Radius: {yaricap}m")
-print(f"Number of points: {nokta_sayisi}\n")
+print(f"Circle center: {center}")
+print(f"Radius: {radius}m")
+print(f"Number of points: {no_points}\n")
 
 # Calculate the points on the circle
 points = []
-for i in range(nokta_sayisi):
-    target = 2 * math.pi * i / nokta_sayisi
-    x = merkez[0] + yaricap * math.cos(target)
-    y = merkez[1] + yaricap * math.sin(target)
-    z = merkez[2]
+for i in range(no_points):
+    target = 2 * math.pi * i / no_points
+    x = center[0] + radius * math.cos(target)
+    y = center[1] + radius * math.sin(target)
+    z = center[2]
     points.append([x, y, z])
+    visualize_target(x,y,z,)
 
 print("The robot is drawing the circle...")
-for i, nokta in enumerate(points):
+for i, coordinates in enumerate(points):
     # Calculate IK
-    eklem_targetlari = inverse_kinematics(nokta)
+    joint_targets = inverse_kinematics(coordinates)
     
     # Move the joints
     for idx, joint_idx in enumerate(movable_joints[:7]):
-        position_control_joint(joint_idx, eklem_targetlari[idx])
+        position_control_joint(joint_idx, joint_targets[idx])
     
     # Run a short simulation at each point
-    simulate(50)
+    simulate(100)
     
     # Show progress
     if i % 5 == 0:
-        joint_pos = end_effector_pozisyonu()
-        print(f"  Point {i+1}/{nokta_sayisi}: "
+        joint_pos = end_effector_position()
+        print(f"  Point {i+1}/{no_points}: "
               f"({joint_pos[0]:.3f}, {joint_pos[1]:.3f}, {joint_pos[2]:.3f})")
 
 print("\n✓ Trajectory following complete!")
@@ -292,25 +294,25 @@ print("TEST 4: Real-Time IK Tracking")
 print("="*60)
 print("The robot will track a moving target for 10 seconds\n")
 
-baslangic = time.time()
+start_time = time.time()
 t = 0
 
-while time.time() - baslangic < 10:
+while time.time() - start_time < 10:
     # Moving target (sinusoidal)
     target_x = 0.4 + 0.1 * math.sin(t)
     target_y = 0.0 + 0.15 * math.cos(t * 0.8)
     target_z = 0.6 + 0.05 * math.sin(t * 1.2)
     
     # Calculate IK
-    eklem_targetlari = inverse_kinematics([target_x, target_y, target_z])
+    joint_targets = inverse_kinematics([target_x, target_y, target_z])
     
     # Move the joints
     for idx, joint_idx in enumerate(movable_joints[:7]):
-        position_control_joint(joint_idx, eklem_targetlari[idx])
+        position_control_joint(joint_idx, joint_targets[idx])
     
     # Read the actual position
-    joint_pos = end_effector_pozisyonu()
-    mesafe = math.sqrt(
+    joint_pos = end_effector_position()
+    error = math.sqrt(
         (joint_pos[0] - target_x)**2 +
         (joint_pos[1] - target_y)**2 +
         (joint_pos[2] - target_z)**2
@@ -319,8 +321,8 @@ while time.time() - baslangic < 10:
     # Print to the screen
     print(f"\rTarget: ({target_x:.3f}, {target_y:.3f}, {target_z:.3f}) | "
           f"Actual: ({joint_pos[0]:.3f}, {joint_pos[1]:.3f}, {joint_pos[2]:.3f}) | "
-          f"Error: {mesafe*1000:.1f}mm | "
-          f"Time: {time.time()-baslangic:.1f}s", end="")
+          f"Error: {error*1000:.1f}mm | "
+          f"Time: {time.time()-start_time:.1f}s", end="")
     
     p.stepSimulation()
     time.sleep(1./240.)

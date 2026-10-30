@@ -145,7 +145,7 @@ colorLER = {
 }
 color_gosterim = {"red": "red", "blue": "blue", "green": "green"}
 
-def rgb_mesafesi(color1, color2):
+def rgb_errorsi(color1, color2):
     """Euclidean distance between two RGB colors"""
     return math.sqrt(sum([(color1[i] - color2[i])**2 for i in range(3)]))
 
@@ -168,13 +168,13 @@ def color_tani(nesne_id):
 
     # Find the closest color
     en_yakin_color = None
-    en_kucuk_mesafe = float('inf')
+    en_kucuk_error = float('inf')
 
     for color_adi, color_bilgi in colorLER.items():
-        mesafe = rgb_mesafesi(nesne_rgb, color_bilgi["rgb"])
+        error = rgb_errorsi(nesne_rgb, color_bilgi["rgb"])
 
-        if mesafe < en_kucuk_mesafe:
-            en_kucuk_mesafe = mesafe
+        if error < en_kucuk_error:
+            en_kucuk_error = error
             en_yakin_color = color_adi
 
     return en_yakin_color
@@ -183,7 +183,7 @@ def color_tani(nesne_id):
 # CREATE OBJECTS
 # =====================================================
 
-def kup_olustur(pozisyon, color_adi):
+def kup_olustur(position, color_adi):
     """Create a colored cube"""
     color_rgb = colorLER[color_adi]["rgb"]
 
@@ -194,7 +194,7 @@ def kup_olustur(pozisyon, color_adi):
     nesne = p.createMultiBody(baseMass=0.05,
                              baseCollisionShapeIndex=collision,
                              baseVisualShapeIndex=visual,
-                             basePosition=pozisyon)
+                             basePosition=position)
     return nesne
 
 # =====================================================
@@ -280,7 +280,7 @@ print("="*70)
 
 basari_sayisi = 0
 basarisiz_sayisi = 0
-baslangic_zamani = time.time()
+start_time_zamani = time.time()
 
 # Counter for each color (number of cubes placed in each bin)
 kutu_sayaclari = {"red": 0, "blue": 0, "green": 0}
@@ -332,7 +332,7 @@ for idx, nesne in enumerate(nesneler, 1):
     print(f"\n  Progress: {'█' * tamamlanan}{'░' * kalan} {idx}/{num_cubes}")
 
 bitis_zamani = time.time()
-toplam_sure = bitis_zamani - baslangic_zamani
+toplam_sure = bitis_zamani - start_time_zamani
 
 # =====================================================
 # RESULTS REPORT

@@ -97,13 +97,13 @@ print("  2. Sphere")
 print("  3. Cylinder\n")
 
 # Helper function: create an object
-def nesne_olustur(tip, pozisyon, color, boyut=0.05):
+def nesne_olustur(tip, position, color, boyut=0.05):
     """
     Create an object in the simulation.
 
     Parameters:
         tip: "box", "sphere", "cylinder"
-        pozisyon: [x, y, z]
+        position: [x, y, z]
         color: [r, g, b, a]
         boyut: Object size (meters)
 
@@ -153,7 +153,7 @@ def nesne_olustur(tip, pozisyon, color, boyut=0.05):
         baseMass=0.05,  # Lightweight (50 grams)
         baseCollisionShapeIndex=collision_shape,
         baseVisualShapeIndex=visual_shape,
-        basePosition=pozisyon
+        basePosition=position
     )
 
     return nesne_id
@@ -187,14 +187,14 @@ print("="*60)
 print("SECTION 4: Reading Object Positions")
 print("="*60)
 
-def nesne_pozisyonu_oku(nesne_id):
+def nesne_position_oku(nesne_id):
     """Read the object's position and orientation."""
     pos, orn = p.getBasePositionAndOrientation(nesne_id)
     return pos, orn
 
 print("\nCurrent object positions:")
 for idx, nesne in enumerate([kutu1, kutu2, kutu3], 1):
-    pos, _ = nesne_pozisyonu_oku(nesne)
+    pos, _ = nesne_position_oku(nesne)
     print(f"  Object {idx}: ({pos[0]:.3f}, {pos[1]:.3f}, {pos[2]:.3f})")
 
 input("\nPress ENTER to continue...\n")
@@ -241,7 +241,7 @@ def robot_hareket_ettir(target_pos, sure=2.0):
         p.stepSimulation()
         time.sleep(1./240.)
 
-def end_effector_pozisyonu():
+def end_effector_position():
     """Return the current position of the end effector."""
     joint_params = p.getLinkState(robot, 6)
     return joint_params[0]
@@ -261,20 +261,20 @@ def nesne_tut(nesne_id):
         return False
 
     # End-effector position
-    ee_pos = end_effector_pozisyonu()
+    ee_pos = end_effector_position()
 
     # Object position
-    nesne_pos, _ = nesne_pozisyonu_oku(nesne_id)
+    nesne_pos, _ = nesne_position_oku(nesne_id)
 
     # Check the distance
-    mesafe = math.sqrt(
+    error = math.sqrt(
         (ee_pos[0]-nesne_pos[0])**2 +
         (ee_pos[1]-nesne_pos[1])**2 +
         (ee_pos[2]-nesne_pos[2])**2
     )
 
-    if mesafe > 0.15:  # Cannot grasp if farther than 15 cm
-        print(f"  ✗ Object is too far away! Distance: {mesafe*100:.1f}cm")
+    if error > 0.15:  # Cannot grasp if farther than 15 cm
+        print(f"  ✗ Object is too far away! Distance: {error*100:.1f}cm")
         return False
 
     # Create a constraint (connection)
@@ -322,7 +322,7 @@ print("="*60)
 
 # Pick up the red cube
 print("\n→ STEP 1: Move above the red cube")
-kutu1_pos, _ = nesne_pozisyonu_oku(kutu1)
+kutu1_pos, _ = nesne_position_oku(kutu1)
 target_ustte = [kutu1_pos[0], kutu1_pos[1], kutu1_pos[2] + 0.2]
 robot_hareket_ettir(target_ustte, sure=2.0)
 print("  ✓ Above it")
@@ -357,7 +357,7 @@ for _ in range(120):
 print("  ✓ Cube released and fell")
 
 # Check the final position
-final_pos, _ = nesne_pozisyonu_oku(kutu1)
+final_pos, _ = nesne_position_oku(kutu1)
 print(f"\nRed cube moved:")
 print(f"  Start: ({kutu1_pos[0]:.2f}, {kutu1_pos[1]:.2f}, {kutu1_pos[2]:.2f})")
 print(f"  End  : ({final_pos[0]:.2f}, {final_pos[1]:.2f}, {final_pos[2]:.2f})")
@@ -380,7 +380,7 @@ for idx, (nesne, color) in enumerate(zip(nesneler, colorler)):
     print(f"\n→ Gathering the {color.lower()} object...")
 
     # Object position
-    pos, _ = nesne_pozisyonu_oku(nesne)
+    pos, _ = nesne_position_oku(nesne)
 
     # Move above it
     print("  - Moving above it...")

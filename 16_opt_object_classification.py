@@ -180,20 +180,20 @@ print("\n[OPTIMIZATION 4] Smart trajectory planning...")
 def en_yakin_nesneyi_bul(nesneler, mevcut_pos=[0.3, 0, 0.5]):
     """Find the nearest object"""
     en_yakin_idx = 0
-    en_kucuk_mesafe = float('inf')
+    en_kucuk_error = float('inf')
 
     for idx, nesne in enumerate(nesneler):
         if nesne is None:  # Skip if it has already been processed
             continue
 
         nesne_pos, _ = p.getBasePositionAndOrientation(nesne)
-        mesafe = math.sqrt(
+        error = math.sqrt(
             (nesne_pos[0] - mevcut_pos[0])**2 +
             (nesne_pos[1] - mevcut_pos[1])**2
         )
 
-        if mesafe < en_kucuk_mesafe:
-            en_kucuk_mesafe = mesafe
+        if error < en_kucuk_error:
+            en_kucuk_error = error
             en_yakin_idx = idx
 
     return en_yakin_idx
@@ -223,12 +223,12 @@ def color_tani_hizli(nesne_id):
     nesne_rgb = np.array(rgba[:3])
 
     # Calculate all colors at once (NumPy is fast!)
-    mesafeler = {}
+    errorler = {}
     for color_adi, color_bilgi in colorLER.items():
         color_rgb = np.array(color_bilgi["rgb"])
-        mesafeler[color_adi] = np.linalg.norm(nesne_rgb - color_rgb)
+        errorler[color_adi] = np.linalg.norm(nesne_rgb - color_rgb)
 
-    return min(mesafeler, key=mesafeler.get)
+    return min(errorler, key=errorler.get)
 
 print("  ✓ NumPy vectorization active")
 
@@ -236,14 +236,14 @@ print("  ✓ NumPy vectorization active")
 # CREATE OBJECTS
 # =====================================================
 
-def kup_olustur(pozisyon, color_adi):
+def kup_olustur(position, color_adi):
     """Create a cube"""
     color_rgb = colorLER[color_adi]["rgb"]
     collision = p.createCollisionShape(p.GEOM_BOX, halfExtents=[0.02, 0.02, 0.02])
     visual = p.createVisualShape(p.GEOM_BOX, halfExtents=[0.02, 0.02, 0.02],
                                   rgbaColor=[color_rgb[0], color_rgb[1], color_rgb[2], 1])
     nesne = p.createMultiBody(baseMass=0.05, baseCollisionShapeIndex=collision,
-                             baseVisualShapeIndex=visual, basePosition=pozisyon)
+                             baseVisualShapeIndex=visual, basePosition=position)
     return nesne
 
 print("\n" + "="*70)
@@ -321,7 +321,7 @@ print("OPTIMIZED CLASSIFICATION STARTING")
 print("="*70)
 
 basari_sayisi = 0
-baslangic_zamani = time.time()
+start_time_zamani = time.time()
 kutu_sayaclari = {"red": 0, "blue": 0, "green": 0}
 
 # Current robot position
@@ -345,10 +345,10 @@ for islem_no in range(num_cubes):
                 nesne_pos_1, _ = p.getBasePositionAndOrientation(nesneler[idx])
                 nesne_pos_2, _ = p.getBasePositionAndOrientation(nesneler[en_yakin_idx])
 
-                mesafe_1 = math.sqrt((nesne_pos_1[0]-mevcut_pos[0])**2 + (nesne_pos_1[1]-mevcut_pos[1])**2)
-                mesafe_2 = math.sqrt((nesne_pos_2[0]-mevcut_pos[0])**2 + (nesne_pos_2[1]-mevcut_pos[1])**2)
+                error_1 = math.sqrt((nesne_pos_1[0]-mevcut_pos[0])**2 + (nesne_pos_1[1]-mevcut_pos[1])**2)
+                error_2 = math.sqrt((nesne_pos_2[0]-mevcut_pos[0])**2 + (nesne_pos_2[1]-mevcut_pos[1])**2)
 
-                if mesafe_1 < mesafe_2:
+                if error_1 < error_2:
                     en_yakin_idx = idx
 
     nesne = nesneler[en_yakin_idx]
@@ -384,7 +384,7 @@ for islem_no in range(num_cubes):
     print(f"  Progress: {'█' * tamamlanan}{'░' * kalan} {tamamlanan}/{num_cubes}")
 
 bitis_zamani = time.time()
-toplam_sure = bitis_zamani - baslangic_zamani
+toplam_sure = bitis_zamani - start_time_zamani
 
 # =====================================================
 # RESULTS - COMPARISON
