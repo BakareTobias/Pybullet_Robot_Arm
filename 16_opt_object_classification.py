@@ -102,25 +102,25 @@ for eklem in gripper_eklemleri:
 # NEW: Cache IK results
 ik_cache = {}
 
-def ik_hesapla_cached(hedef_pos):
+def ik_hesapla_cached(target_pos):
     """Calculate IK with caching"""
     # Round the position (for the cache key)
-    key = (round(hedef_pos[0], 2), round(hedef_pos[1], 2), round(hedef_pos[2], 2))
+    key = (round(target_pos[0], 2), round(target_pos[1], 2), round(target_pos[2], 2))
 
     if key in ik_cache:
         return ik_cache[key]
 
-    hedef_orn = p.getQuaternionFromEuler([math.pi, 0, 0])
+    target_orn = p.getQuaternionFromEuler([math.pi, 0, 0])
     ik_result = p.calculateInverseKinematics(
-        panda, end_effector_index, hedef_pos, hedef_orn,
+        panda, end_effector_index, target_pos, target_orn,
         maxNumIterations=50,  # 50 instead of 100 (faster)
         residualThreshold=0.005  # 0.005 instead of 0.001 (slightly more tolerant)
     )
 
-    hedef_targetlari = [ik_result[i] for i in kol_eklemleri]
-    ik_cache[key] = hedef_targetlari
+    target_targetlari = [ik_result[i] for i in kol_eklemleri]
+    ik_cache[key] = target_targetlari
 
-    return hedef_targetlari
+    return target_targetlari
 
 print(f"  ✓ IK cache ready")
 
@@ -132,9 +132,9 @@ print("\n[OPTIMIZATION 3] Optimizing movement speed...")
 # NEW: Real-time simulation can be disabled (if visuals are unnecessary)
 GERCEK_ZAMANLI = True  # Set to False for no visuals but MUCH FASTER execution!
 
-def kol_hareket_ettir_hizli(hedef_pos, sure=1.5):
+def kol_hareket_ettir_hizli(target_pos, sure=1.5):
     """Optimized movement"""
-    hedef_targetlari = ik_hesapla_cached(hedef_pos)
+    target_targetlari = ik_hesapla_cached(target_pos)
 
     no_steps = int(sure * 180)  # 180 instead of 240 (fewer steps)
 
@@ -142,7 +142,7 @@ def kol_hareket_ettir_hizli(hedef_pos, sure=1.5):
         for i, eklem_idx in enumerate(kol_eklemleri):
             p.setJointMotorControl2(
                 panda, eklem_idx, p.POSITION_CONTROL,
-                targetPosition=hedef_targetlari[i],
+                targetPosition=target_targetlari[i],
                 force=100,  # 100 instead of 87 (faster movement)
                 maxVelocity=1.5  # 1.5 instead of 1.0 (faster)
             )
@@ -155,12 +155,12 @@ def kol_hareket_ettir_hizli(hedef_pos, sure=1.5):
 
 def gripper_kontrol_hizli(komut, kuvvet=100):
     """Optimized gripper"""
-    hedef = 0.04 if komut == "open" else 0.0
+    target = 0.04 if komut == "open" else 0.0
 
     for eklem in gripper_eklemleri:
         p.setJointMotorControl2(
             panda, eklem, p.POSITION_CONTROL,
-            targetPosition=hedef, force=kuvvet
+            targetPosition=target, force=kuvvet
         )
 
     # NEW: Wait less
@@ -205,15 +205,15 @@ print("  ✓ Nearest-object algorithm active")
 # =====================================================
 print("\n[OPTIMIZATION 5] Color recognition optimized...")
 
-RENKLER = {
+colorLER = {
     "red": {"rgb": [1.0, 0.0, 0.0], "kutu_pos": [0.3, 0.25, 0.38]},
     "blue":    {"rgb": [0.0, 0.0, 1.0], "kutu_pos": [0.3, 0.0, 0.38]},
     "green":   {"rgb": [0.0, 1.0, 0.0], "kutu_pos": [0.3, -0.25, 0.38]}
 }
-renk_gosterim = {"red": "red", "blue": "blue", "green": "green"}
+color_gosterim = {"red": "red", "blue": "blue", "green": "green"}
 
 # NEW: Vectorized computation with NumPy
-def renk_tani_hizli(nesne_id):
+def color_tani_hizli(nesne_id):
     """Vectorized color recognition"""
     visual_data = p.getVisualShapeData(nesne_id)
     if len(visual_data) == 0:
@@ -224,9 +224,9 @@ def renk_tani_hizli(nesne_id):
 
     # Calculate all colors at once (NumPy is fast!)
     mesafeler = {}
-    for renk_adi, renk_bilgi in RENKLER.items():
-        renk_rgb = np.array(renk_bilgi["rgb"])
-        mesafeler[renk_adi] = np.linalg.norm(nesne_rgb - renk_rgb)
+    for color_adi, color_bilgi in colorLER.items():
+        color_rgb = np.array(color_bilgi["rgb"])
+        mesafeler[color_adi] = np.linalg.norm(nesne_rgb - color_rgb)
 
     return min(mesafeler, key=mesafeler.get)
 
@@ -236,12 +236,12 @@ print("  ✓ NumPy vectorization active")
 # CREATE OBJECTS
 # =====================================================
 
-def kup_olustur(pozisyon, renk_adi):
+def kup_olustur(pozisyon, color_adi):
     """Create a cube"""
-    renk_rgb = RENKLER[renk_adi]["rgb"]
+    color_rgb = colorLER[color_adi]["rgb"]
     collision = p.createCollisionShape(p.GEOM_BOX, halfExtents=[0.02, 0.02, 0.02])
     visual = p.createVisualShape(p.GEOM_BOX, halfExtents=[0.02, 0.02, 0.02],
-                                  rgbaColor=[renk_rgb[0], renk_rgb[1], renk_rgb[2], 1])
+                                  rgbaColor=[color_rgb[0], color_rgb[1], color_rgb[2], 1])
     nesne = p.createMultiBody(baseMass=0.05, baseCollisionShapeIndex=collision,
                              baseVisualShapeIndex=visual, basePosition=pozisyon)
     return nesne
@@ -252,23 +252,23 @@ print("="*70)
 
 num_cubes = 8
 nesneler = []
-nesne_renkleri = []
+nesne_colorleri = []
 
 print(f"\n→ Creating {num_cubes} cubes...")
 
-renk_isimleri = list(RENKLER.keys())
+color_isimleri = list(colorLER.keys())
 
 for i in range(num_cubes):
     x = random.uniform(0.5, 0.6)
     y = random.uniform(-0.25, 0.25)
     z = 0.35
-    renk = random.choice(renk_isimleri)
+    color = random.choice(color_isimleri)
 
-    kup = kup_olustur([x, y, z], renk)
+    kup = kup_olustur([x, y, z], color)
     nesneler.append(kup)
-    nesne_renkleri.append(renk)
+    nesne_colorleri.append(color)
 
-    print(f"  {i+1}. Cube: {renk_gosterim[renk]:8s} → ({x:.2f}, {y:.2f})")
+    print(f"  {i+1}. Cube: {color_gosterim[color]:8s} → ({x:.2f}, {y:.2f})")
 
 # NEW: Wait less
 print("\n→ Cubes are falling...")
@@ -277,9 +277,9 @@ for _ in range(150):  # 240 yerine 150
     if GERCEK_ZAMANLI:
         time.sleep(1./180.)
 
-kirmizi_sayisi = nesne_renkleri.count("red")
-mavi_sayisi = nesne_renkleri.count("blue")
-yesil_sayisi = nesne_renkleri.count("green")
+kirmizi_sayisi = nesne_colorleri.count("red")
+mavi_sayisi = nesne_colorleri.count("blue")
+yesil_sayisi = nesne_colorleri.count("green")
 
 print(f"\nColor Distribution:")
 print(f"  🔴 Red:   {kirmizi_sayisi}")
@@ -292,7 +292,7 @@ input("\nPress ENTER to start...\n")
 # OPTIMIZED PICK-AND-PLACE
 # =====================================================
 
-def pick_and_place_optimize(nesne_id, hedef_pos):
+def pick_and_place_optimize(nesne_id, target_pos):
     """Maximally optimized pick-and-place"""
     nesne_pos, _ = p.getBasePositionAndOrientation(nesne_id)
 
@@ -303,8 +303,8 @@ def pick_and_place_optimize(nesne_id, hedef_pos):
     gripper_kontrol_hizli("close", kuvvet=120)
 
     # Go directly to the target (no intermediate height!)
-    kol_hareket_ettir_hizli([hedef_pos[0], hedef_pos[1], hedef_pos[2] + 0.15], sure=1.2)
-    kol_hareket_ettir_hizli([hedef_pos[0], hedef_pos[1], hedef_pos[2]], sure=0.7)
+    kol_hareket_ettir_hizli([target_pos[0], target_pos[1], target_pos[2] + 0.15], sure=1.2)
+    kol_hareket_ettir_hizli([target_pos[0], target_pos[1], target_pos[2]], sure=0.7)
     gripper_kontrol_hizli("open")
 
     # Minimum wait
@@ -355,28 +355,28 @@ for islem_no in range(num_cubes):
     islenmis[en_yakin_idx] = True
 
     # Color recognition (fast)
-    taninan_renk = renk_tani_hizli(nesne)
-    gercek_renk = nesne_renkleri[en_yakin_idx]
+    taninan_color = color_tani_hizli(nesne)
+    gercek_color = nesne_colorleri[en_yakin_idx]
 
-    if taninan_renk == gercek_renk:
-        print(f"  ✓ Color: {renk_gosterim[taninan_renk]}")
+    if taninan_color == gercek_color:
+        print(f"  ✓ Color: {color_gosterim[taninan_color]}")
         basari_sayisi += 1
     else:
-        taninan_renk = gercek_renk
+        taninan_color = gercek_color
 
     # Calculate target
-    hedef_kutu = RENKLER[taninan_renk]["kutu_pos"]
-    offset = kutu_sayaclari[taninan_renk] * 0.045
-    hedef_final = [hedef_kutu[0], hedef_kutu[1] + offset - 0.045, hedef_kutu[2]]
+    target_kutu = colorLER[taninan_color]["kutu_pos"]
+    offset = kutu_sayaclari[taninan_color] * 0.045
+    target_final = [target_kutu[0], target_kutu[1] + offset - 0.045, target_kutu[2]]
 
-    print(f"  → Moving to the {renk_gosterim[taninan_renk]} bin...")
+    print(f"  → Moving to the {color_gosterim[taninan_color]} bin...")
 
     # Optimized pick-and-place
-    pick_and_place_optimize(nesne, hedef_final)
-    kutu_sayaclari[taninan_renk] += 1
+    pick_and_place_optimize(nesne, target_final)
+    kutu_sayaclari[taninan_color] += 1
 
     # New current position
-    mevcut_pos = hedef_final
+    mevcut_pos = target_final
 
     # Progress
     tamamlanan = islem_no + 1

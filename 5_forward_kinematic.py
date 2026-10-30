@@ -67,13 +67,13 @@ def read_end_effector_position():
 # =====================================================
 sphere = None
 
-def draw_sphere(x, y, z, renk=[0, 1, 0, 0.8]):
+def draw_sphere(x, y, z, color=[0, 1, 0, 0.8]):
     """
     Draw a colored sphere at the specified position.
 
     Parameters:
         x, y, z: Position
-        renk: [R, G, B, transparency] (from 0 to 1)
+        color: [R, G, B, transparency] (from 0 to 1)
     """
     global sphere
 
@@ -88,7 +88,7 @@ def draw_sphere(x, y, z, renk=[0, 1, 0, 0.8]):
     visualshape = p.createVisualShape(
         shapeType=p.GEOM_SPHERE,
         radius=0.05,
-        rgbaColor=renk
+        rgbaColor=color
     )
     #create the sphere in simulation
     sphere = p.createMultiBody(
@@ -118,7 +118,7 @@ print(f"   Y = {y:.3f} meters")
 print(f"   Z = {z:.3f} meters")
 
 # Mark with a green sphere
-draw_sphere(x, y, z, renk=[0, 1, 0, 0.8])
+draw_sphere(x, y, z, color=[0, 1, 0, 0.8])
 
 input("\nPress ENTER to continue...")
 
@@ -140,7 +140,7 @@ print(f"   Y = {y:.3f} meters")
 print(f"   Z = {z:.3f} meters")
 
 # Mark with a red sphere
-draw_sphere(x, y, z, renk=[1, 0, 0, 0.8])
+draw_sphere(x, y, z, color=[1, 0, 0, 0.8])
 
 print("\nObservation:")
 print("  Joint 0 rotates around the Z axis")
@@ -172,7 +172,7 @@ print(f"   X = {x:.3f} m")
 print(f"   Y = {y:.3f} m")
 print(f"   Z = {z:.3f} m")
 
-draw_sphere(x, y, z, renk=[0, 0, 1, 0.8])
+draw_sphere(x, y, z, color=[0, 0, 1, 0.8])
 
 input("\nPress ENTER to continue...")
 
@@ -193,7 +193,7 @@ positionArray = [
     ([-30, 60], [1, 0, 1, 0.7])         # Purple
 ]
 
-for idx, (targetlar, renk) in enumerate(positionArray, 1):
+for idx, (targetlar, color) in enumerate(positionArray, 1):
     target0, target1 = targetlar
 
     print(f"Position {idx}: Joint 0={target0:3d}°, Joint 1={target1:3d}°")
@@ -206,7 +206,7 @@ for idx, (targetlar, renk) in enumerate(positionArray, 1):
     print(f"   → Position: ({x:.3f}, {y:.3f}, {z:.3f})")
 
     # Create a persistent marker (do not remove it)
-    visualShape = p.createVisualShape(p.GEOM_SPHERE, radius=0.04, rgbaColor=renk)
+    visualShape = p.createVisualShape(p.GEOM_SPHERE, radius=0.04, rgbaColor=color)
     p.createMultiBody(0, baseVisualShapeIndex=visualShape, basePosition=[x, y, z])
 
     time.sleep(0.5)

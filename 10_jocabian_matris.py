@@ -333,8 +333,8 @@ for idx, (t1_init, t2_init) in enumerate(baslangiclar, 1):
 
     # Verification
     x, y = forward_kinematics(t1, t2)
-    hata = np.linalg.norm([target[0]-x, target[1]-y])
-    print(f"   Error: {hata*1000:.2f} mm")
+    error = np.linalg.norm([target[0]-x, target[1]-y])
+    print(f"   Error: {error*1000:.2f} mm")
 
     cozumler.append((t1, t2, errs))
 
@@ -350,7 +350,7 @@ ax1.set_xlabel('X (m)', fontsize=12)
 ax1.set_ylabel('Y (m)', fontsize=12)
 ax1.set_title('Different Solutions (Same Target)', fontsize=14, fontweight='bold')
 
-renkler = ['red', 'blue', 'green']
+colorler = ['red', 'blue', 'green']
 
 for idx, (t1, t2, _) in enumerate(cozumler):
     # Draw the robot
@@ -359,9 +359,9 @@ for idx, (t1, t2, _) in enumerate(cozumler):
     y1 = L1 * math.sin(t1)
     x2, y2 = forward_kinematics(t1, t2)
 
-    ax1.plot([x0, x1], [y0, y1], color=renkler[idx], linewidth=3, label=f'Solution {idx+1}')
-    ax1.plot([x1, x2], [y1, y2], color=renkler[idx], linewidth=3)
-    ax1.plot(x2, y2, 'o', color=renkler[idx], markersize=10)
+    ax1.plot([x0, x1], [y0, y1], color=colorler[idx], linewidth=3, label=f'Solution {idx+1}')
+    ax1.plot([x1, x2], [y1, y2], color=colorler[idx], linewidth=3)
+    ax1.plot(x2, y2, 'o', color=colorler[idx], markersize=10)
 
 # Target
 ax1.plot(target[0], target[1], 'k*', markersize=20, label='Target')
@@ -369,7 +369,7 @@ ax1.legend(fontsize=10)
 
 # Right: Convergence plots
 for idx, (_, _, errs) in enumerate(cozumler):
-    ax2.plot(errs, color=renkler[idx], linewidth=2, label=f'Solution {idx+1}')
+    ax2.plot(errs, color=colorler[idx], linewidth=2, label=f'Solution {idx+1}')
 
 ax2.set_xlabel('Iteration', fontsize=12)
 ax2.set_ylabel('Error (m)', fontsize=12)
@@ -395,12 +395,12 @@ print("="*60)
 print("TEST 3: Unreachable Target")
 print("="*60)
 
-uzak_hedef = (2.5, 2.5)  # Very far away!
-print(f"\nVery distant target: ({uzak_hedef[0]}, {uzak_hedef[1]})")
+uzak_target = (2.5, 2.5)  # Very far away!
+print(f"\nVery distant target: ({uzak_target[0]}, {uzak_target[1]})")
 print(f"  (The robot can reach a maximum of {L1+L2}m = {L1+L2}m)")
 
 t1, t2, iters, errs = inverse_kinematics_jacobian(
-    uzak_hedef[0], uzak_hedef[1],
+    uzak_target[0], uzak_target[1],
     max_iter=50
 )
 
@@ -409,7 +409,7 @@ mesafe = np.sqrt(x_final**2 + y_final**2)
 
 print(f"\n✓ Algorithm stopped (maximum iterations)")
 print(f"  Nearest position: ({x_final:.3f}, {y_final:.3f})")
-print(f"  Target: ({uzak_hedef[0]}, {uzak_hedef[1]})")
+print(f"  Target: ({uzak_target[0]}, {uzak_target[1]})")
 print(f"  Reached distance: {mesafe:.3f}m")
 print(f"  Error: {errs[-1]:.3f}m = {errs[-1]*100:.1f}cm")
 print("\n  The robot moved to the nearest point possible!")

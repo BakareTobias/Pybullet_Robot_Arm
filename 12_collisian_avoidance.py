@@ -129,14 +129,14 @@ def ik_hesapla(x, y, z):
     return p.calculateInverseKinematics(robot, 6, [x, y, z])
 
 marker = None
-def marker_goster(x, y, z, renk=[0, 1, 0, 0.8]):
+def marker_goster(x, y, z, color=[0, 1, 0, 0.8]):
     global marker
     if marker is not None:
         try:
             p.removeBody(marker)
         except:
             pass
-    gorsel = p.createVisualShape(p.GEOM_SPHERE, radius=0.05, rgbaColor=renk)
+    gorsel = p.createVisualShape(p.GEOM_SPHERE, radius=0.05, rgbaColor=color)
     marker = p.createMultiBody(0, baseVisualShapeIndex=gorsel, basePosition=[x, y, z])
 
 def carpisma_var_mi(guvenlik_mesafesi=0.05):
@@ -176,16 +176,16 @@ print("="*60)
 
 print("\n→ The robot will move in a safe area (away from obstacles)")
 
-guvenli_hedefler = [
+guvenli_targets = [
     [0.5, 0.5, 0.6],   # Outside the obstacles
     [0.6, -0.4, 0.5],  # Outside the obstacles
 ]
 
-for idx, hedef in enumerate(guvenli_hedefler, 1):
-    print(f"\n  Target {idx}: {hedef}")
+for idx, target in enumerate(guvenli_targets, 1):
+    print(f"\n  Target {idx}: {target}")
 
-    marker_goster(*hedef, renk=[0, 1, 0, 0.8])
-    eklem_targetlari = ik_hesapla(*hedef)
+    marker_goster(*target, color=[0, 1, 0, 0.8])
+    eklem_targetlari = ik_hesapla(*target)
 
     for i in range(7):
         position_control_joint(i, eklem_targetlari[i])
@@ -210,21 +210,21 @@ print("="*60)
 print("SECTION 4: Dangerous Target (Collision Risk!)")
 print("="*60)
 
-tehlikeli_hedef = [0.4, 0.1, 0.3]  # Directly inside obstacle 1!
-print(f"\n⚠ Dangerous target: {tehlikeli_hedef}")
+tehlikeli_target = [0.4, 0.1, 0.3]  # Directly inside obstacle 1!
+print(f"\n⚠ Dangerous target: {tehlikeli_target}")
 print("  (This target is inside obstacle 1!)")
 
-marker_goster(*tehlikeli_hedef, renk=[1, 0, 0, 0.8])
+marker_goster(*tehlikeli_target, color=[1, 0, 0, 0.8])
 
 print("\n→ The robot will move toward the dangerous target...")
-eklem_targetlari = ik_hesapla(*tehlikeli_hedef)
+eklem_targetlari = ik_hesapla(*tehlikeli_target)
 
 for i in range(7):
     position_control_joint(i, eklem_targetlari[i])
 
 # Monitor during movement
 carpti_mi = False
-for adim in range(400):
+for steps in range(400):
     p.stepSimulation()
     time.sleep(1./240.)
 
@@ -235,8 +235,8 @@ for adim in range(400):
         carpti_mi = True
 
     # Report the state every 50 steps
-    if adim % 50 == 0 and carpti:
-        print(f"    Step {adim}: Distance to obstacle = {mesafe*100:.1f} cm")
+    if steps % 50 == 0 and carpti:
+        print(f"    Step {steps}: Distance to obstacle = {mesafe*100:.1f} cm")
 
 if carpti_mi:
     print("\n  ✗ Collision risk detected!")
@@ -260,20 +260,20 @@ Strategy: Pass OVER the obstacles
 """)
 
 baslangic = [0.5, 0.5, 0.5]
-hedef_son = [0.3, -0.3, 0.4]  # Near the obstacles
+target_son = [0.3, -0.3, 0.4]  # Near the obstacles
 
 guvenli_yukseklik = 0.9  # Above the obstacles
 
 print(f"\nStart: {baslangic}")
-print(f"Target: {hedef_son}")
+print(f"Target: {target_son}")
 print(f"Safe height: {guvenli_yukseklik}m")
 
 # Create waypoints
 waypoints = [
     np.array(baslangic),                                    # 1. Start
     np.array([baslangic[0], baslangic[1], guvenli_yukseklik]),  # 2. Move up
-    np.array([hedef_son[0], hedef_son[1], guvenli_yukseklik]),  # 3. Move above the target
-    np.array(hedef_son)                                     # 4. Move down
+    np.array([target_son[0], target_son[1], guvenli_yukseklik]),  # 3. Move above the target
+    np.array(target_son)                                     # 4. Move down
 ]
 
 print("\nWaypoints:")
@@ -296,14 +296,14 @@ for idx in range(len(waypoints) - 1):
 
     # Smooth movement using cubic interpolation
     no_steps = 200
-    for adim in range(no_steps):
-        t = adim / no_steps
+    for steps in range(no_steps):
+        t = steps / no_steps
         s = 3 * t**2 - 2 * t**3  # Cubic
 
-        hedef_anlik = baslangic_wp + (bitis_wp - baslangic_wp) * s
+        target_anlik = baslangic_wp + (bitis_wp - baslangic_wp) * s
 
-        marker_goster(*hedef_anlik, renk=[0, 1, 1, 0.8])
-        eklem_targetlari = ik_hesapla(*hedef_anlik)
+        marker_goster(*target_anlik, color=[0, 1, 1, 0.8])
+        eklem_targetlari = ik_hesapla(*target_anlik)
 
         for i in range(7):
             position_control_joint(i, eklem_targetlari[i])
@@ -313,7 +313,7 @@ for idx in range(len(waypoints) - 1):
 
         # Collision check
         carpti, mesafe = carpisma_var_mi(guvenlik_mesafesi=0.15)
-        if carpti and adim % 50 == 0:
+        if carpti and steps % 50 == 0:
             print(f"    ⚠ Distance to obstacle: {mesafe*100:.1f} cm (but at a safe height!)")
 
     print(f"    ✓ Reached waypoint {idx+2}")
@@ -343,15 +343,15 @@ This is a simple demo; real applications are more complex:
 
 print("\n→ The robot will stop if it gets too close to an obstacle...")
 
-hedef_dinamik = [0.35, 0.0, 0.4]
-marker_goster(*hedef_dinamik, renk=[1, 0.5, 0, 0.8])
+target_dinamik = [0.35, 0.0, 0.4]
+marker_goster(*target_dinamik, color=[1, 0.5, 0, 0.8])
 
-eklem_targetlari = ik_hesapla(*hedef_dinamik)
+eklem_targetlari = ik_hesapla(*target_dinamik)
 
 for i in range(7):
     position_control_joint(i, eklem_targetlari[i])
 
-for adim in range(500):
+for steps in range(500):
     carpti, mesafe = carpisma_var_mi(guvenlik_mesafesi=0.12)
 
     if carpti:
@@ -359,7 +359,7 @@ for adim in range(500):
             print(f"\n  🛑 STOP! {mesafe*100:.1f} cm from the obstacle - too close!")
             print("     An alternative path would be searched for in a real application.")
             break
-        elif adim % 50 == 0:
+        elif steps % 50 == 0:
             print(f"  ⚠ Caution: obstacle at a distance of {mesafe*100:.1f} cm")
 
     p.stepSimulation()

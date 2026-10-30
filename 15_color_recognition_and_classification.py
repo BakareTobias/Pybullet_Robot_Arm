@@ -103,32 +103,32 @@ for i, angle in enumerate(home_angles):
 for eklem in gripper_eklemleri:
     p.resetJointState(panda, eklem, 0.04)
 
-def kol_hareket_ettir(hedef_pos, sure=2.0):
+def kol_hareket_ettir(target_pos, sure=2.0):
     """Move the robot arm to the target position"""
-    hedef_orn = p.getQuaternionFromEuler([math.pi, 0, 0])
+    target_orn = p.getQuaternionFromEuler([math.pi, 0, 0])
 
     ik_result = p.calculateInverseKinematics(
-        panda, end_effector_index, hedef_pos, hedef_orn,
+        panda, end_effector_index, target_pos, target_orn,
         maxNumIterations=100, residualThreshold=0.001
     )
 
-    hedef_targetlari = [ik_result[i] for i in kol_eklemleri]
+    target_targetlari = [ik_result[i] for i in kol_eklemleri]
 
     no_steps = int(sure * 240)
     for _ in range(no_steps):
         for i, eklem_idx in enumerate(kol_eklemleri):
             p.setJointMotorControl2(panda, eklem_idx, p.POSITION_CONTROL,
-                                   targetPosition=hedef_targetlari[i],
+                                   targetPosition=target_targetlari[i],
                                    force=87, maxVelocity=1.0)
         p.stepSimulation()
         time.sleep(1./240.)
 
 def gripper_kontrol(komut, kuvvet=80):
     """Open/close the gripper"""
-    hedef = 0.04 if komut == "open" else 0.0
+    target = 0.04 if komut == "open" else 0.0
     for eklem in gripper_eklemleri:
         p.setJointMotorControl2(panda, eklem, p.POSITION_CONTROL,
-                               targetPosition=hedef, force=kuvvet)
+                               targetPosition=target, force=kuvvet)
     for _ in range(80):
         p.stepSimulation()
         time.sleep(1./240.)
@@ -138,18 +138,18 @@ def gripper_kontrol(komut, kuvvet=80):
 # =====================================================
 
 # Color definitions (RGB values)
-RENKLER = {
+colorLER = {
     "red": {"rgb": [1.0, 0.0, 0.0], "kutu_pos": [0.3, 0.25, 0.38]},
     "blue":    {"rgb": [0.0, 0.0, 1.0], "kutu_pos": [0.3, 0.0, 0.38]},
     "green":   {"rgb": [0.0, 1.0, 0.0], "kutu_pos": [0.3, -0.25, 0.38]}
 }
-renk_gosterim = {"red": "red", "blue": "blue", "green": "green"}
+color_gosterim = {"red": "red", "blue": "blue", "green": "green"}
 
-def rgb_mesafesi(renk1, renk2):
+def rgb_mesafesi(color1, color2):
     """Euclidean distance between two RGB colors"""
-    return math.sqrt(sum([(renk1[i] - renk2[i])**2 for i in range(3)]))
+    return math.sqrt(sum([(color1[i] - color2[i])**2 for i in range(3)]))
 
-def renk_tani(nesne_id):
+def color_tani(nesne_id):
     """
     Identify the object's color
 
@@ -167,29 +167,29 @@ def renk_tani(nesne_id):
     nesne_rgb = rgba[:3]
 
     # Find the closest color
-    en_yakin_renk = None
+    en_yakin_color = None
     en_kucuk_mesafe = float('inf')
 
-    for renk_adi, renk_bilgi in RENKLER.items():
-        mesafe = rgb_mesafesi(nesne_rgb, renk_bilgi["rgb"])
+    for color_adi, color_bilgi in colorLER.items():
+        mesafe = rgb_mesafesi(nesne_rgb, color_bilgi["rgb"])
 
         if mesafe < en_kucuk_mesafe:
             en_kucuk_mesafe = mesafe
-            en_yakin_renk = renk_adi
+            en_yakin_color = color_adi
 
-    return en_yakin_renk
+    return en_yakin_color
 
 # =====================================================
 # CREATE OBJECTS
 # =====================================================
 
-def kup_olustur(pozisyon, renk_adi):
+def kup_olustur(pozisyon, color_adi):
     """Create a colored cube"""
-    renk_rgb = RENKLER[renk_adi]["rgb"]
+    color_rgb = colorLER[color_adi]["rgb"]
 
     collision = p.createCollisionShape(p.GEOM_BOX, halfExtents=[0.02, 0.02, 0.02])
     visual = p.createVisualShape(p.GEOM_BOX, halfExtents=[0.02, 0.02, 0.02],
-                                  rgbaColor=[renk_rgb[0], renk_rgb[1], renk_rgb[2], 1])
+                                  rgbaColor=[color_rgb[0], color_rgb[1], color_rgb[2], 1])
 
     nesne = p.createMultiBody(baseMass=0.05,
                              baseCollisionShapeIndex=collision,
@@ -206,11 +206,11 @@ print("="*70)
 
 num_cubes = 8  # Total number of cubes
 nesneler = []
-nesne_renkleri = []
+nesne_colorleri = []
 
 print(f"\n→ Creating {num_cubes} random cubes...")
 
-renk_isimleri = list(RENKLER.keys())
+color_isimleri = list(colorLER.keys())
 
 for i in range(num_cubes):
     # Random position (right side of the table)
@@ -219,14 +219,14 @@ for i in range(num_cubes):
     z = 0.35
 
     # Choose a random color
-    renk = random.choice(renk_isimleri)
+    color = random.choice(color_isimleri)
 
     # Create the cube
-    kup = kup_olustur([x, y, z], renk)
+    kup = kup_olustur([x, y, z], color)
     nesneler.append(kup)
-    nesne_renkleri.append(renk)
+    nesne_colorleri.append(color)
 
-    print(f"  {i+1}. Cube: {renk_gosterim[renk]:8s} → Position: ({x:.2f}, {y:.2f}, {z:.2f})")
+    print(f"  {i+1}. Cube: {color_gosterim[color]:8s} → Position: ({x:.2f}, {y:.2f}, {z:.2f})")
 
 # Wait for the cubes to fall
 print("\n→ Cubes are falling...")
@@ -237,9 +237,9 @@ for _ in range(240):
 print("✓ Cubes are ready")
 
 # Show the color distribution
-kirmizi_sayisi = nesne_renkleri.count("red")
-mavi_sayisi = nesne_renkleri.count("blue")
-yesil_sayisi = nesne_renkleri.count("green")
+kirmizi_sayisi = nesne_colorleri.count("red")
+mavi_sayisi = nesne_colorleri.count("blue")
+yesil_sayisi = nesne_colorleri.count("green")
 
 print(f"\nColor Distribution:")
 print(f"  🔴 Red:   {kirmizi_sayisi}")
@@ -252,7 +252,7 @@ input("\nPress ENTER to start...\n")
 # PICK-AND-PLACE FUNCTION
 # =====================================================
 
-def pick_and_place_hizli(nesne_id, hedef_pos):
+def pick_and_place_hizli(nesne_id, target_pos):
     """Accelerated pick-and-place"""
     nesne_pos, _ = p.getBasePositionAndOrientation(nesne_id)
 
@@ -265,11 +265,11 @@ def pick_and_place_hizli(nesne_id, hedef_pos):
     kol_hareket_ettir([nesne_pos[0], nesne_pos[1], nesne_pos[2] + 0.2], sure=1.2)
 
     # Place
-    kol_hareket_ettir([hedef_pos[0], hedef_pos[1], hedef_pos[2] + 0.15], sure=1.5)
-    kol_hareket_ettir([hedef_pos[0], hedef_pos[1], hedef_pos[2]], sure=1.0)
+    kol_hareket_ettir([target_pos[0], target_pos[1], target_pos[2] + 0.15], sure=1.5)
+    kol_hareket_ettir([target_pos[0], target_pos[1], target_pos[2]], sure=1.0)
     gripper_kontrol("open")
     time.sleep(0.2)
-    kol_hareket_ettir([hedef_pos[0], hedef_pos[1], hedef_pos[2] + 0.15], sure=1.0)
+    kol_hareket_ettir([target_pos[0], target_pos[1], target_pos[2] + 0.15], sure=1.0)
 
 # =====================================================
 # MAIN PROCESS - CLASSIFICATION
@@ -292,26 +292,26 @@ for idx, nesne in enumerate(nesneler, 1):
 
     # 1. Color recognition
     print("  [1/4] Recognizing color...")
-    taninan_renk = renk_tani(nesne)
-    gercek_renk = nesne_renkleri[idx-1]
-    renk_gosterim = {"red": "RED", "blue": "BLUE", "green": "GREEN"}
+    taninan_color = color_tani(nesne)
+    gercek_color = nesne_colorleri[idx-1]
+    color_gosterim = {"red": "RED", "blue": "BLUE", "green": "GREEN"}
 
-    if taninan_renk == gercek_renk:
-        print(f"  ✓ Color: {renk_gosterim[taninan_renk]}")
+    if taninan_color == gercek_color:
+        print(f"  ✓ Color: {color_gosterim[taninan_color]}")
         basari_sayisi += 1
     else:
-        print(f"  ✗ Error! Recognized: {renk_gosterim[taninan_renk]}, Actual: {renk_gosterim[gercek_renk]}")
+        print(f"  ✗ Error! Recognized: {color_gosterim[taninan_color]}, Actual: {color_gosterim[gercek_color]}")
         basarisiz_sayisi += 1
-        taninan_renk = gercek_renk  # Correct it
+        taninan_color = gercek_color  # Correct it
 
     # 2. Target bin position
-    hedef_kutu = RENKLER[taninan_renk]["kutu_pos"]
+    target_kutu = colorLER[taninan_color]["kutu_pos"]
 
     # Arrange cubes side by side if the bin already contains cubes
-    offset = kutu_sayaclari[taninan_renk] * 0.045
-    hedef_final = [hedef_kutu[0], hedef_kutu[1] + offset - 0.045, hedef_kutu[2]]
+    offset = kutu_sayaclari[taninan_color] * 0.045
+    target_final = [target_kutu[0], target_kutu[1] + offset - 0.045, target_kutu[2]]
 
-    print(f"  [2/4] Target: {renk_gosterim[taninan_renk]} bin")
+    print(f"  [2/4] Target: {color_gosterim[taninan_color]} bin")
 
     # 3. Pick and place
     print(f"  [3/4] Picking up cube...")
@@ -319,9 +319,9 @@ for idx, nesne in enumerate(nesneler, 1):
     print(f"        Position: ({nesne_pos[0]:.2f}, {nesne_pos[1]:.2f}, {nesne_pos[2]:.2f})")
 
     try:
-        pick_and_place_hizli(nesne, hedef_final)
-        print(f"  [4/4] ✓ Cube placed in the {renk_gosterim[taninan_renk]} bin!")
-        kutu_sayaclari[taninan_renk] += 1
+        pick_and_place_hizli(nesne, target_final)
+        print(f"  [4/4] ✓ Cube placed in the {color_gosterim[taninan_color]} bin!")
+        kutu_sayaclari[taninan_color] += 1
     except:
         print(f"  [4/4] ✗ Transfer error!")
         basarisiz_sayisi += 1

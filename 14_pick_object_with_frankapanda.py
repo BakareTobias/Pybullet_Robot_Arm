@@ -104,36 +104,36 @@ print("✓ Robot is in the home position")
 # FIXED FUNCTIONS
 # =====================================================
 
-def kol_hareket_ettir(hedef_pos, hedef_orn=None, sure=2.0):
+def kol_hareket_ettir(target_pos, target_orn=None, sure=2.0):
     """
     FIXED: Correctly controls all arm joints
     """
     # Calculate IK
-    if hedef_orn is None:
+    if target_orn is None:
         # Default orientation (ftargetng downward)
-        hedef_orn = p.getQuaternionFromEuler([math.pi, 0, 0])
+        target_orn = p.getQuaternionFromEuler([math.pi, 0, 0])
 
     ik_result = p.calculateInverseKinematics(
         bodyUniqueId=panda,
         endEffectorLinkIndex=end_effector_index,
-        targetPosition=hedef_pos,
-        targetOrientation=hedef_orn,
+        targetPosition=target_pos,
+        targetOrientation=target_orn,
         maxNumIterations=100,
         residualThreshold=0.001
     )
 
     # Get only the arm joint angles
-    hedef_targetlari = [ik_result[i] for i in kol_eklemleri]
+    target_targetlari = [ik_result[i] for i in kol_eklemleri]
 
     # Move
     no_steps = int(sure * 240)
-    for adim in range(no_steps):
+    for steps in range(no_steps):
         for i, eklem_idx in enumerate(kol_eklemleri):
             p.setJointMotorControl2(
                 bodyUniqueId=panda,
                 jointIndex=eklem_idx,
                 controlMode=p.POSITION_CONTROL,
-                targetPosition=hedef_targetlari[i],
+                targetPosition=target_targetlari[i],
                 force=87,
                 maxVelocity=1.0
             )
@@ -144,9 +144,9 @@ def kol_hareket_ettir(hedef_pos, hedef_orn=None, sure=2.0):
 def gripper_kontrol(komut, kuvvet=50):
     """Control the gripper (unchanged)"""
     if komut == "open":
-        hedef = 0.04
+        target = 0.04
     elif komut == "close":
-        hedef = 0.0
+        target = 0.0
     else:
         print("⚠ Invalid command!")
         return
@@ -155,7 +155,7 @@ def gripper_kontrol(komut, kuvvet=50):
         p.setJointMotorControl2(
             panda, eklem,
             p.POSITION_CONTROL,
-            targetPosition=hedef,
+            targetPosition=target,
             force=kuvvet
         )
 
@@ -168,17 +168,17 @@ def end_effector_pos():
     joint_params = p.getLinkState(panda, end_effector_index)
     return joint_params[0]
 
-def nesne_olustur(tip, pozisyon, renk, boyut=0.04):
+def nesne_olustur(tip, pozisyon, color, boyut=0.04):
     """Create an object"""
     if tip == "box":
         collision = p.createCollisionShape(p.GEOM_BOX,
                                           halfExtents=[boyut/2, boyut/2, boyut/2])
         visual = p.createVisualShape(p.GEOM_BOX,
                                      halfExtents=[boyut/2, boyut/2, boyut/2],
-                                     rgbaColor=renk)
+                                     rgbaColor=color)
     elif tip == "sphere":
         collision = p.createCollisionShape(p.GEOM_SPHERE, radius=boyut/2)
-        visual = p.createVisualShape(p.GEOM_SPHERE, radius=boyut/2, rgbaColor=renk)
+        visual = p.createVisualShape(p.GEOM_SPHERE, radius=boyut/2, rgbaColor=color)
 
     nesne = p.createMultiBody(
         baseMass=0.05,
@@ -189,9 +189,9 @@ def nesne_olustur(tip, pozisyon, renk, boyut=0.04):
     return nesne
 
 # Debug marker (shows the target position)
-def hedef_goster(pos, renk=[0, 1, 0, 0.5]):
+def show_target(pos, color=[0, 1, 0, 0.5]):
     """Show the target position with a sphere"""
-    gorsel = p.createVisualShape(p.GEOM_SPHERE, radius=0.03, rgbaColor=renk)
+    gorsel = p.createVisualShape(p.GEOM_SPHERE, radius=0.03, rgbaColor=color)
     marker = p.createMultiBody(0, baseVisualShapeIndex=gorsel, basePosition=pos)
     return marker
 
@@ -208,19 +208,19 @@ gripper_kontrol("open")
 # Test position
 test_pos = [0.5, 0.2, 0.5]
 print(f"\n→ Move to test position: {test_pos}")
-hedef_goster(test_pos, [1, 0, 0, 0.7])  # Red marker
+show_target(test_pos, [1, 0, 0, 0.7])  # Red marker
 
 kol_hareket_ettir(test_pos, sure=3.0)
 
 # Check the actual position
-gercek_pos = end_effector_pos()
+joint_pos = end_effector_pos()
 print(f"\n✓ Target position: {test_pos}")
-print(f"✓ Actual position: [{gercek_pos[0]:.3f}, {gercek_pos[1]:.3f}, {gercek_pos[2]:.3f}]")
+print(f"✓ Actual position: [{joint_pos[0]:.3f}, {joint_pos[1]:.3f}, {joint_pos[2]:.3f}]")
 
-hata = math.sqrt(sum([(test_pos[i]-gercek_pos[i])**2 for i in range(3)]))
-print(f"✓ Position error: {hata*100:.2f} cm")
+error = math.sqrt(sum([(test_pos[i]-joint_pos[i])**2 for i in range(3)]))
+print(f"✓ Position error: {error*100:.2f} cm")
 
-if hata < 0.05:
+if error < 0.05:
     print("  ✓✓ EXCELLENT! Positioning is working correctly!")
 else:
     print(f"  ⚠ The error is a little large but acceptable")
@@ -276,7 +276,7 @@ gripper_kontrol("open")
 # STEP 2: Move above the cube
 print("  2. Moving above the cube...")
 ustte = [kutu_pos[0], kutu_pos[1], kutu_pos[2] + 0.2]
-hedef_goster(ustte, [0, 1, 1, 0.5])
+show_target(ustte, [0, 1, 1, 0.5])
 kol_hareket_ettir(ustte, sure=2.5)
 
 # Check the position
@@ -286,7 +286,7 @@ print(f"     End-effector: [{ee_pos[0]:.3f}, {ee_pos[1]:.3f}, {ee_pos[2]:.3f}]")
 # STEP 3: Descend slowly
 print("  3. Moving toward the cube...")
 yakin = [kutu_pos[0], kutu_pos[1], kutu_pos[2]]
-hedef_goster(yakin, [1, 1, 0, 0.5])
+show_target(yakin, [1, 1, 0, 0.5])
 kol_hareket_ettir(yakin, sure=2.0)
 
 # Check the final position
@@ -321,8 +321,8 @@ if kaldirma_mesafesi > 0.15:
 
     # STEP 6: Move it to a new location
     print("\n  6. Moving to a new position...")
-    hedef_yeni = [0.3, -0.2, 0.5]
-    kol_hareket_ettir(hedef_yeni, sure=2.5)
+    target_yeni = [0.3, -0.2, 0.5]
+    kol_hareket_ettir(target_yeni, sure=2.5)
 
     # STEP 7: Release
     print("  7. Releasing the cube...")
@@ -374,7 +374,7 @@ for _ in range(180):
 
 print("\n→ Picking up objects...")
 
-hedef_merkez = [0.25, 0.0, 0.43]
+target_merkez = [0.25, 0.0, 0.43]
 
 for idx, nesne in enumerate(nesneler):
     print(f"\n  Processing object {idx+1}/3...")
@@ -392,9 +392,9 @@ for idx, nesne in enumerate(nesneler):
 
     # Place
     offset = (idx - 1) * 0.06
-    hedef = [hedef_merkez[0], hedef_merkez[1] + offset, hedef_merkez[2] + 0.25]
-    kol_hareket_ettir(hedef, sure=2.0)
-    kol_hareket_ettir([hedef[0], hedef[1], hedef_merkez[2] + 0.05], sure=1.0)
+    target = [target_merkez[0], target_merkez[1] + offset, target_merkez[2] + 0.25]
+    kol_hareket_ettir(target, sure=2.0)
+    kol_hareket_ettir([target[0], target[1], target_merkez[2] + 0.05], sure=1.0)
     gripper_kontrol("open")
 
     for _ in range(60):

@@ -97,14 +97,14 @@ print("  2. Sphere")
 print("  3. Cylinder\n")
 
 # Helper function: create an object
-def nesne_olustur(tip, pozisyon, renk, boyut=0.05):
+def nesne_olustur(tip, pozisyon, color, boyut=0.05):
     """
     Create an object in the simulation.
 
     Parameters:
         tip: "box", "sphere", "cylinder"
         pozisyon: [x, y, z]
-        renk: [r, g, b, a]
+        color: [r, g, b, a]
         boyut: Object size (meters)
 
     Returns:
@@ -119,7 +119,7 @@ def nesne_olustur(tip, pozisyon, renk, boyut=0.05):
         visual_shape = p.createVisualShape(
             p.GEOM_BOX,
             halfExtents=[boyut/2, boyut/2, boyut/2],
-            rgbaColor=renk
+            rgbaColor=color
         )
 
     elif tip == "sphere":
@@ -131,7 +131,7 @@ def nesne_olustur(tip, pozisyon, renk, boyut=0.05):
         visual_shape = p.createVisualShape(
             p.GEOM_SPHERE,
             radius=boyut/2,
-            rgbaColor=renk
+            rgbaColor=color
         )
 
     elif tip == "cylinder":
@@ -145,7 +145,7 @@ def nesne_olustur(tip, pozisyon, renk, boyut=0.05):
             p.GEOM_CYLINDER,
             radius=boyut/2,
             length=boyut,
-            rgbaColor=renk
+            rgbaColor=color
         )
 
     # Create the object
@@ -230,9 +230,9 @@ def position_control_joint(joint_no, target):
 def ik_hesapla(x, y, z):
     return p.calculateInverseKinematics(robot, 6, [x, y, z])
 
-def robot_hareket_ettir(hedef_pos, sure=2.0):
+def robot_hareket_ettir(target_pos, sure=2.0):
     """Move the robot to the target position (using a trajectory)."""
-    eklem_targetlari = ik_hesapla(*hedef_pos)
+    eklem_targetlari = ik_hesapla(*target_pos)
 
     no_steps = int(sure * 240)
     for _ in range(no_steps):
@@ -323,13 +323,13 @@ print("="*60)
 # Pick up the red cube
 print("\n→ STEP 1: Move above the red cube")
 kutu1_pos, _ = nesne_pozisyonu_oku(kutu1)
-hedef_ustte = [kutu1_pos[0], kutu1_pos[1], kutu1_pos[2] + 0.2]
-robot_hareket_ettir(hedef_ustte, sure=2.0)
+target_ustte = [kutu1_pos[0], kutu1_pos[1], kutu1_pos[2] + 0.2]
+robot_hareket_ettir(target_ustte, sure=2.0)
 print("  ✓ Above it")
 
 print("\n→ STEP 2: Move down to the cube's level")
-hedef_yakin = [kutu1_pos[0], kutu1_pos[1], kutu1_pos[2] + 0.05]
-robot_hareket_ettir(hedef_yakin, sure=1.5)
+target_yakin = [kutu1_pos[0], kutu1_pos[1], kutu1_pos[2] + 0.05]
+robot_hareket_ettir(target_yakin, sure=1.5)
 print("  ✓ Near the cube")
 
 print("\n→ STEP 3: Grasp the cube")
@@ -337,8 +337,8 @@ nesne_tut(kutu1)
 time.sleep(0.5)
 
 print("\n→ STEP 4: Lift it")
-hedef_yukari = [kutu1_pos[0], kutu1_pos[1], kutu1_pos[2] + 0.3]
-robot_hareket_ettir(hedef_yukari, sure=1.5)
+target_yukari = [kutu1_pos[0], kutu1_pos[1], kutu1_pos[2] + 0.3]
+robot_hareket_ettir(target_yukari, sure=1.5)
 print("  ✓ Cube is in the air!")
 
 print("\n→ STEP 5: Move it to a new position")
@@ -371,13 +371,13 @@ print("="*60)
 print("TEST 2: Gathering All Objects Together")
 print("="*60)
 
-hedef_alan = [0.0, 0.0, 0.05]  # Gather at the center
+target_alan = [0.0, 0.0, 0.05]  # Gather at the center
 
 nesneler = [kutu1, kutu2, kutu3]
-renkler = ["Red", "Blue", "Green"]
+colorler = ["Red", "Blue", "Green"]
 
-for idx, (nesne, renk) in enumerate(zip(nesneler, renkler)):
-    print(f"\n→ Gathering the {renk.lower()} object...")
+for idx, (nesne, color) in enumerate(zip(nesneler, colorler)):
+    print(f"\n→ Gathering the {color.lower()} object...")
 
     # Object position
     pos, _ = nesne_pozisyonu_oku(nesne)
@@ -400,11 +400,11 @@ for idx, (nesne, renk) in enumerate(zip(nesneler, renkler)):
         # Move to the target area
         print("  - Moving to the target...")
         offset_x = idx * 0.08  # Arrange side by side
-        robot_hareket_ettir([hedef_alan[0] + offset_x, hedef_alan[1], 0.3], sure=1.5)
+        robot_hareket_ettir([target_alan[0] + offset_x, target_alan[1], 0.3], sure=1.5)
 
         # Release
         print("  - Releasing...")
-        robot_hareket_ettir([hedef_alan[0] + offset_x, hedef_alan[1], 0.15], sure=0.8)
+        robot_hareket_ettir([target_alan[0] + offset_x, target_alan[1], 0.15], sure=0.8)
         nesne_birak()
 
         # Wait for it to fall
@@ -412,9 +412,9 @@ for idx, (nesne, renk) in enumerate(zip(nesneler, renkler)):
             p.stepSimulation()
             time.sleep(1./240.)
 
-        print(f"  ✓ {renk} object gathered!")
+        print(f"  ✓ {color} object gathered!")
     else:
-        print(f"  ✗ Could not grasp the {renk.lower()} object")
+        print(f"  ✗ Could not grasp the {color.lower()} object")
 
 print("\n✓ All objects gathered!")
 

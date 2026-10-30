@@ -210,8 +210,8 @@ def position_control_joint(joint_no, target):
         maxVelocity=3.0
     )
 
-def simulate(adim):
-    for _ in range(adim):
+def simulate(steps):
+    for _ in range(steps):
         p.stepSimulation()
         time.sleep(1./240.)
 
@@ -221,14 +221,14 @@ def ik_hesapla(x, y, z):
 
 # Marker
 marker = None
-def marker_goster(x, y, z, renk=[0, 1, 0, 0.8]):
+def marker_goster(x, y, z, color=[0, 1, 0, 0.8]):
     global marker
     if marker is not None:
         try:
             p.removeBody(marker)
         except:
             pass
-    gorsel = p.createVisualShape(p.GEOM_SPHERE, radius=0.05, rgbaColor=renk)
+    gorsel = p.createVisualShape(p.GEOM_SPHERE, radius=0.05, rgbaColor=color)
     marker = p.createMultiBody(0, baseVisualShapeIndex=gorsel, basePosition=[x, y, z])
 
 # =====================================================
@@ -255,15 +255,15 @@ print("  Movement starting...")
 sure = 3.0  # seconds
 no_steps = int(sure * 240)  # 240 Hz
 
-for adim in range(no_steps):
-    t = adim / no_steps  # 0.0 → 1.0
+for steps in range(no_steps):
+    t = steps / no_steps  # 0.0 → 1.0
 
     # Linear interpolation
-    hedef = baslangic_pos + (bitis_pos - baslangic_pos) * t
+    target = baslangic_pos + (bitis_pos - baslangic_pos) * t
 
     # IK and movement
-    marker_goster(*hedef, renk=[1, 0, 0, 0.8])
-    eklem_targetlari = ik_hesapla(*hedef)
+    marker_goster(*target, color=[1, 0, 0, 0.8])
+    eklem_targetlari = ik_hesapla(*target)
     for i in range(7):
         position_control_joint(i, eklem_targetlari[i])
 
@@ -294,16 +294,16 @@ simulate(300)
 
 print("  Movement starting...")
 
-for adim in range(no_steps):
-    t = adim / no_steps  # 0.0 → 1.0
+for steps in range(no_steps):
+    t = steps / no_steps  # 0.0 → 1.0
 
     # Cubic interpolation
     s = 3 * t**2 - 2 * t**3  # Smooth transition
-    hedef = baslangic_pos + (bitis_pos - baslangic_pos) * s
+    target = baslangic_pos + (bitis_pos - baslangic_pos) * s
 
     # IK and movement
-    marker_goster(*hedef, renk=[0, 1, 0, 0.8])
-    eklem_targetlari = ik_hesapla(*hedef)
+    marker_goster(*target, color=[0, 1, 0, 0.8])
+    eklem_targetlari = ik_hesapla(*target)
     for i in range(7):
         position_control_joint(i, eklem_targetlari[i])
 
@@ -349,15 +349,15 @@ for idx in range(len(waypoints) - 1):
     print(f"  Segment {idx+1}: {baslangic} → {bitis}")
 
     segment_sure = 2.0
-    segment_adim = int(segment_sure * 240)
+    segment_steps = int(segment_sure * 240)
 
-    for adim in range(segment_adim):
-        t = adim / segment_adim
+    for steps in range(segment_steps):
+        t = steps / segment_steps
         s = 3 * t**2 - 2 * t**3  # Cubic
-        hedef = baslangic + (bitis - baslangic) * s
+        target = baslangic + (bitis - baslangic) * s
 
-        marker_goster(*hedef, renk=[0, 0, 1, 0.8])
-        eklem_targetlari = ik_hesapla(*hedef)
+        marker_goster(*target, color=[0, 0, 1, 0.8])
+        eklem_targetlari = ik_hesapla(*target)
         for i in range(7):
             position_control_joint(i, eklem_targetlari[i])
 

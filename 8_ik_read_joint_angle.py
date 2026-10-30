@@ -64,12 +64,12 @@ def simulate(no_steps):
         p.stepSimulation()
         time.sleep(1./240.)
 
-def marker_olustur(x, y, z, renk=[1, 0, 0, 0.7]):
+def marker_olustur(x, y, z, color=[1, 0, 0, 0.7]):
     """Create a marker to visualize the target position."""
     visual_shape = p.createVisualShape(
         shapeType=p.GEOM_SPHERE,
         radius=0.05,
-        rgbaColor=renk
+        rgbaColor=color
     )
     marker = p.createMultiBody(
         baseMass=0,
@@ -81,13 +81,13 @@ def marker_olustur(x, y, z, renk=[1, 0, 0, 0.7]):
 # =====================================================
 # INVERSE KINEMATICS FUNCTION
 # =====================================================
-def inverse_kinematics(hedef_pozisyon, hedef_orientasyon=None):
+def inverse_kinematics(target_pozisyon, target_orientasyon=None):
     """
     Calculate the joint angles required to reach the target position.
     
     Args:
-        hedef_pozisyon: (x, y, z) target position
-        hedef_orientasyon: (x, y, z, w) quaternion (optional)
+        target_pozisyon: (x, y, z) target position
+        target_orientasyon: (x, y, z, w) quaternion (optional)
     
     Returns:
         eklem_targetlari: List of joint angles (radians)
@@ -96,9 +96,9 @@ def inverse_kinematics(hedef_pozisyon, hedef_orientasyon=None):
     end_effector_link = num_joints - 1
     
     # Use PyBullet's built-in IK solver
-    if hedef_orientasyon is None:
+    if target_orientasyon is None:
         # Position target only (orientation does not matter)
-        hedef_orientasyon = [0, 0, 0, 1]  # Default quaternion
+        target_orientasyon = [0, 0, 0, 1]  # Default quaternion
     
     # IK solver parameters
     ik_solver = 0  # 0 = ikSolver, 1 = ikSolverPosOnly
@@ -121,8 +121,8 @@ def inverse_kinematics(hedef_pozisyon, hedef_orientasyon=None):
     ik_result = p.calculateInverseKinematics(
         bodyUniqueId=robot,
         endEffectorLinkIndex=end_effector_link,
-        targetPosition=hedef_pozisyon,
-        targetOrientation=hedef_orientasyon,
+        targetPosition=target_pozisyon,
+        targetOrientation=target_orientasyon,
         lowerLimits=[-math.pi] * len(movable_joints),
         upperLimits=[math.pi] * len(movable_joints),
         jointRanges=[2*math.pi] * len(movable_joints),
@@ -141,16 +141,16 @@ print("TEST 1: Basic Inverse Kinematics")
 print("="*60)
 
 # Target position
-hedef_x, hedef_y, hedef_z = 0.4, 0.3, 0.6
-print(f"\nTarget position: ({hedef_x:.2f}, {hedef_y:.2f}, {hedef_z:.2f})")
+target_x, target_y, target_z = 0.4, 0.3, 0.6
+print(f"\nTarget position: ({target_x:.2f}, {target_y:.2f}, {target_z:.2f})")
 
  # Create a marker
-marker = marker_olustur(hedef_x, hedef_y, hedef_z, [1, 0, 0, 0.7])
+marker = marker_olustur(target_x, target_y, target_z, [1, 0, 0, 0.7])
 print("✓ The red marker shows the target position")
 
 # Calculate IK
 print("\nCalculating Inverse Kinematics...")
-eklem_targetlari = inverse_kinematics([hedef_x, hedef_y, hedef_z])
+eklem_targetlari = inverse_kinematics([target_x, target_y, target_z])
 
 # Find movable joints
 num_joints = p.getNumJoints(robot)
@@ -176,13 +176,13 @@ simulate(500)
 # Check the results
 gercek_pozisyon = end_effector_pozisyonu()
 mesafe = math.sqrt(
-    (gercek_pozisyon[0] - hedef_x)**2 +
-    (gercek_pozisyon[1] - hedef_y)**2 +
-    (gercek_pozisyon[2] - hedef_z)**2
+    (gercek_pozisyon[0] - target_x)**2 +
+    (gercek_pozisyon[1] - target_y)**2 +
+    (gercek_pozisyon[2] - target_z)**2
 )
 
 print(f"\n✓ Movement complete!")
-print(f"  Target position: ({hedef_x:.3f}, {hedef_y:.3f}, {hedef_z:.3f})")
+print(f"  Target position: ({target_x:.3f}, {target_y:.3f}, {target_z:.3f})")
 print(f"  Actual position: ({gercek_pozisyon[0]:.3f}, {gercek_pozisyon[1]:.3f}, {gercek_pozisyon[2]:.3f})")
 print(f"  Distance error: {mesafe*1000:.2f} mm")
 
@@ -196,23 +196,23 @@ print("TEST 2: Multiple Target Positions")
 print("="*60)
 
 # Markers in different colors
-hedefler = [
+targets = [
     ([0.5, 0.2, 0.5], [1, 0, 0, 0.7]),  # Red
     ([0.3, 0.4, 0.6], [0, 1, 0, 0.7]),  # Green
     ([0.4, -0.3, 0.5], [0, 0, 1, 0.7]),  # Blue
     ([0.2, 0.0, 0.7], [1, 1, 0, 0.7]),  # Yellow
 ]
 
-print(f"\n{len(hedefler)} different target positions will be tested\n")
+print(f"\n{len(targets)} different target positions will be tested\n")
 
-for i, (hedef_pos, renk) in enumerate(hedefler):
-    print(f"[Target {i+1}] Position: ({hedef_pos[0]:.2f}, {hedef_pos[1]:.2f}, {hedef_pos[2]:.2f})")
+for i, (target_pos, color) in enumerate(targets):
+    print(f"[Target {i+1}] Position: ({target_pos[0]:.2f}, {target_pos[1]:.2f}, {target_pos[2]:.2f})")
     
     # Create a marker
-    marker = marker_olustur(hedef_pos[0], hedef_pos[1], hedef_pos[2], renk)
+    marker = marker_olustur(target_pos[0], target_pos[1], target_pos[2], color)
     
     # Calculate IK
-    eklem_targetlari = inverse_kinematics(hedef_pos)
+    eklem_targetlari = inverse_kinematics(target_pos)
     
     # Move the joints
     for idx, joint_idx in enumerate(movable_joints[:7]):
@@ -222,14 +222,14 @@ for i, (hedef_pos, renk) in enumerate(hedefler):
     simulate(400)
     
     # Check the result
-    gercek_pos = end_effector_pozisyonu()
+    joint_pos = end_effector_pozisyonu()
     mesafe = math.sqrt(
-        (gercek_pos[0] - hedef_pos[0])**2 +
-        (gercek_pos[1] - hedef_pos[1])**2 +
-        (gercek_pos[2] - hedef_pos[2])**2
+        (joint_pos[0] - target_pos[0])**2 +
+        (joint_pos[1] - target_pos[1])**2 +
+        (joint_pos[2] - target_pos[2])**2
     )
     
-    print(f"  → Actual: ({gercek_pos[0]:.3f}, {gercek_pos[1]:.3f}, {gercek_pos[2]:.3f})")
+    print(f"  → Actual: ({joint_pos[0]:.3f}, {joint_pos[1]:.3f}, {joint_pos[2]:.3f})")
     print(f"  → Error: {mesafe*1000:.2f} mm\n")
     
     time.sleep(0.5)  # Brief pause
@@ -276,9 +276,9 @@ for i, nokta in enumerate(points):
     
     # Show progress
     if i % 5 == 0:
-        gercek_pos = end_effector_pozisyonu()
+        joint_pos = end_effector_pozisyonu()
         print(f"  Point {i+1}/{nokta_sayisi}: "
-              f"({gercek_pos[0]:.3f}, {gercek_pos[1]:.3f}, {gercek_pos[2]:.3f})")
+              f"({joint_pos[0]:.3f}, {joint_pos[1]:.3f}, {joint_pos[2]:.3f})")
 
 print("\n✓ Trajectory following complete!")
 
@@ -297,28 +297,28 @@ t = 0
 
 while time.time() - baslangic < 10:
     # Moving target (sinusoidal)
-    hedef_x = 0.4 + 0.1 * math.sin(t)
-    hedef_y = 0.0 + 0.15 * math.cos(t * 0.8)
-    hedef_z = 0.6 + 0.05 * math.sin(t * 1.2)
+    target_x = 0.4 + 0.1 * math.sin(t)
+    target_y = 0.0 + 0.15 * math.cos(t * 0.8)
+    target_z = 0.6 + 0.05 * math.sin(t * 1.2)
     
     # Calculate IK
-    eklem_targetlari = inverse_kinematics([hedef_x, hedef_y, hedef_z])
+    eklem_targetlari = inverse_kinematics([target_x, target_y, target_z])
     
     # Move the joints
     for idx, joint_idx in enumerate(movable_joints[:7]):
         position_control_joint(joint_idx, eklem_targetlari[idx])
     
     # Read the actual position
-    gercek_pos = end_effector_pozisyonu()
+    joint_pos = end_effector_pozisyonu()
     mesafe = math.sqrt(
-        (gercek_pos[0] - hedef_x)**2 +
-        (gercek_pos[1] - hedef_y)**2 +
-        (gercek_pos[2] - hedef_z)**2
+        (joint_pos[0] - target_x)**2 +
+        (joint_pos[1] - target_y)**2 +
+        (joint_pos[2] - target_z)**2
     )
     
     # Print to the screen
-    print(f"\rTarget: ({hedef_x:.3f}, {hedef_y:.3f}, {hedef_z:.3f}) | "
-          f"Actual: ({gercek_pos[0]:.3f}, {gercek_pos[1]:.3f}, {gercek_pos[2]:.3f}) | "
+    print(f"\rTarget: ({target_x:.3f}, {target_y:.3f}, {target_z:.3f}) | "
+          f"Actual: ({joint_pos[0]:.3f}, {joint_pos[1]:.3f}, {joint_pos[2]:.3f}) | "
           f"Error: {mesafe*1000:.1f}mm | "
           f"Time: {time.time()-baslangic:.1f}s", end="")
     

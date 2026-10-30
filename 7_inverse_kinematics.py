@@ -73,14 +73,14 @@ def position_control_joint(joint_no, target):
         maxVelocity=2.0
     )
 
-def simulate(adim):
-    for _ in range(adim):
+def simulate(steps):
+    for _ in range(steps):
         p.stepSimulation()
         time.sleep(1./240.)
 
 # Marker for showing the target
 marker = None
-def hedef_goster(x, y, z, renk=[1, 0, 0, 0.8]):
+def show_target(x, y, z, color=[1, 0, 0, 0.8]):
     """Show the target position with a red sphere."""
     global marker
     if marker is not None:
@@ -89,7 +89,7 @@ def hedef_goster(x, y, z, renk=[1, 0, 0, 0.8]):
         except:
             pass
 
-    gorsel = p.createVisualShape(p.GEOM_SPHERE, radius=0.08, rgbaColor=renk)
+    gorsel = p.createVisualShape(p.GEOM_SPHERE, radius=0.08, rgbaColor=color)
     marker = p.createMultiBody(0, baseVisualShapeIndex=gorsel, basePosition=[x, y, z])
 
 # =====================================================
@@ -98,27 +98,27 @@ def hedef_goster(x, y, z, renk=[1, 0, 0, 0.8]):
 print("\nPyBullet's calculateInverseKinematics() function:")
 print("  Provide a target position → It calculates all joint angles\n")
 
-def pybullet_ik(hedef_x, hedef_y, hedef_z):
+def pybullet_ik(target_x, target_y, target_z):
     """
     Use PyBullet's IK solver.
 
     Parameters:
-        hedef_x, hedef_y, hedef_z: Target position
+        target_x, target_y, target_z: Target position
 
     Returns:
-        eklem_targetlari: Angles for 7 joints (tuple)
+        joint_angles: Angles for 7 joints (tuple)
     """
     # End-effector = Link 6
     end_effector_index = 6
 
     # Calculate IK
-    eklem_targetlari = p.calculateInverseKinematics(
+    joint_angles = p.calculateInverseKinematics(
         bodyUniqueId=robot,
         endEffectorLinkIndex=end_effector_index,
-        targetPosition=[hedef_x, hedef_y, hedef_z]
+        targetPosition=[target_x, target_y, target_z]
     )
 
-    return eklem_targetlari
+    return joint_angles
 
 # =====================================================
 # TEST 1: First IK Test
@@ -127,39 +127,39 @@ print("="*60)
 print("TEST 1: First IK Calculation")
 print("="*60)
 
-hedef = [0.4, 0.3, 0.5]  # (x, y, z)
-print(f"\nTarget position: x={hedef[0]}, y={hedef[1]}, z={hedef[2]}")
+target = [0.4, 0.3, 0.5]  # (x, y, z)
+print(f"\nTarget position: x={target[0]}, y={target[1]}, z={target[2]}")
 
 # Show the target (red sphere)
-hedef_goster(hedef[0], hedef[1], hedef[2])
+show_target(target[0], target[1], target[2])
 
 print("  → Calculating IK...")
-eklem_targetlari = pybullet_ik(hedef[0], hedef[1], hedef[2])
+joint_targets = pybullet_ik(target[0], target[1], target[2])
 
 print(f"  ✓ Calculated joint angles (degrees):")
 for i in range(7):
-    print(f"    Joint {i}: {math.degrees(eklem_targetlari[i]):6.1f}°")
+    print(f"    Joint {i}: {math.degrees(joint_targets[i]):6.1f}°")
 
 print("\n  → Moving the robot to the calculated angles...")
 for i in range(7):
-    position_control_joint(i, eklem_targetlari[i])
+    position_control_joint(i, joint_targets[i])
 
 simulate(500)
 
 # Check the actual position
 joint_params = p.getLinkState(robot, 6)
-gercek_pos = joint_params[0]
+joint_pos = joint_params[0]
 print(f"\n  ✓ The robot hand reached the target!")
-print(f"    Target   : ({hedef[0]:.3f}, {hedef[1]:.3f}, {hedef[2]:.3f})")
-print(f"    Actual   : ({gercek_pos[0]:.3f}, {gercek_pos[1]:.3f}, {gercek_pos[2]:.3f})")
+print(f"    Target   : ({target[0]:.3f}, {target[1]:.3f}, {target[2]:.3f})")
+print(f"    Actual   : ({joint_pos[0]:.3f}, {joint_pos[1]:.3f}, {joint_pos[2]:.3f})")
 
 # Calculate the error
-hata = math.sqrt(
-    (hedef[0]-gercek_pos[0])**2 +
-    (hedef[1]-gercek_pos[1])**2 +
-    (hedef[2]-gercek_pos[2])**2
+error = math.sqrt(
+    (target[0]-joint_pos[0])**2 +
+    (target[1]-joint_pos[1])**2 +
+    (target[2]-joint_pos[2])**2
 )
-print(f"    Error    : {hata*1000:.1f} mm")
+print(f"    Error    : {error*1000:.1f} mm")
 
 input("\nPress ENTER to continue...\n")
 
@@ -170,7 +170,7 @@ print("="*60)
 print("TEST 2: The Robot Will Move to 5 Different Points")
 print("="*60)
 
-hedefler = [
+targets = [
     ([0.5, 0.0, 0.5], [1, 0, 0, 0.8]),   # Red
     ([0.3, 0.3, 0.8], [0, 1, 0, 0.8]),   # Green
     ([0.0, 0.5, 0.4], [0, 0, 1, 0.8]),   # Blue
@@ -178,28 +178,28 @@ hedefler = [
     ([0.2, 0.2, 0.3], [1, 0, 1, 0.8])    # Purple
 ]
 
-for idx, (hedef, renk) in enumerate(hedefler, 1):
-    x, y, z = hedef
+for idx, (target, color) in enumerate(targets, 1):
+    x, y, z = target
 
     print(f"\nTarget {idx}: ({x:.2f}, {y:.2f}, {z:.2f})")
 
     # Show the target
-    hedef_goster(x, y, z, renk)
+    show_target(x, y, z, color)
 
     # Calculate IK
-    eklem_targetlari = pybullet_ik(x, y, z)
+    joint_targets = pybullet_ik(x, y, z)
 
     # Move the robot
     for i in range(7):
-        position_control_joint(i, eklem_targetlari[i])
+        position_control_joint(i, joint_targets[i])
 
     simulate(400)
 
     # Verify
     joint_params = p.getLinkState(robot, 6)
-    gercek = joint_params[0]
-    hata = math.sqrt((x-gercek[0])**2 + (y-gercek[1])**2 + (z-gercek[2])**2)
-    print(f"  ✓ Reached! Error: {hata*1000:.1f} mm")
+    joint_pos = joint_params[0]
+    error = math.sqrt((x-joint_pos[0])**2 + (y-joint_pos[1])**2 + (z-joint_pos[2])**2)
+    print(f"  ✓ Reached! Error: {error*1000:.1f} mm")
 
     time.sleep(0.5)
 
@@ -215,33 +215,33 @@ print("TEST 3: Unreachable Point")
 print("="*60)
 
 # A point that is very far away
-hedef_uzak = [2.0, 2.0, 2.0]
-print(f"\nVery distant target: ({hedef_uzak[0]}, {hedef_uzak[1]}, {hedef_uzak[2]})")
+unreachable_target = [2.0, 2.0, 2.0]
+print(f"\nVery distant target: ({unreachable_target[0]}, {unreachable_target[1]}, {unreachable_target[2]})")
 print("  (The robot's maximum reach is around ~1.5m)")
 
-hedef_goster(hedef_uzak[0], hedef_uzak[1], hedef_uzak[2], [1, 0.5, 0, 0.8])
+show_target(unreachable_target[0], unreachable_target[1], unreachable_target[2], [1, 0.5, 0, 0.8])
 
 print("\n  → Calculating IK...")
-eklem_targetlari = pybullet_ik(hedef_uzak[0], hedef_uzak[1], hedef_uzak[2])
+joint_targets = pybullet_ik(unreachable_target[0], unreachable_target[1], unreachable_target[2])
 
 print("  → The robot is moving to the nearest position...")
 for i in range(7):
-    position_control_joint(i, eklem_targetlari[i])
+    position_control_joint(i, joint_targets[i])
 
 simulate(500)
 
 # Actual position
 joint_params = p.getLinkState(robot, 6)
-gercek = joint_params[0]
-hata = math.sqrt(
-    (hedef_uzak[0]-gercek[0])**2 +
-    (hedef_uzak[1]-gercek[1])**2 +
-    (hedef_uzak[2]-gercek[2])**2
+joint_pos = joint_params[0]
+error = math.sqrt(
+    (unreachable_target[0]-joint_pos[0])**2 +
+    (unreachable_target[1]-joint_pos[1])**2 +
+    (unreachable_target[2]-joint_pos[2])**2
 )
 
-print(f"\n  Target   : ({hedef_uzak[0]:.3f}, {hedef_uzak[1]:.3f}, {hedef_uzak[2]:.3f})")
-print(f"  Reached  : ({gercek[0]:.3f}, {gercek[1]:.3f}, {gercek[2]:.3f})")
-print(f"  Error    : {hata:.3f} m = {hata*100:.1f} cm")
+print(f"\n  Target   : ({unreachable_target[0]:.3f}, {unreachable_target[1]:.3f}, {unreachable_target[2]:.3f})")
+print(f"  Reached  : ({joint_pos[0]:.3f}, {joint_pos[1]:.3f}, {joint_pos[2]:.3f})")
+print(f"  Error    : {error:.3f} m = {error*100:.1f} cm")
 print("\n  ⚠ The robot could not reach the target exactly (too far away!)")
 print("     But it moved to the nearest possible point.")
 
@@ -282,11 +282,11 @@ while time.time() - baslangic < 10:
     print(f"\rTarget: ({x:.2f}, {y:.2f}, {z:.2f})", end="")
 
     # IK and movement
-    hedef_goster(x, y, z)
-    eklem_targetlari = pybullet_ik(x, y, z)
+    show_target(x, y, z)
+    joint_targets = pybullet_ik(x, y, z)
 
     for i in range(7):
-        position_control_joint(i, eklem_targetlari[i])
+        position_control_joint(i, joint_targets[i])
 
     simulate(100)
 
@@ -310,7 +310,7 @@ USAGE:
   eklem_targetlari = p.calculateInverseKinematics(
       robot,
       end_effector_index,
-      [hedef_x, hedef_y, hedef_z]
+      [target_x, target_y, target_z]
   )
 
 NEXT LESSON:

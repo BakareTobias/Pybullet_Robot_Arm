@@ -192,11 +192,11 @@ t = 0
 
 while time.time() - start_time < 10:  # 10 seconds 
     # Sinusoidal movement
-    hedef_0 = 0.6 * math.sin(t)
-    hedef_1 = 0.4 * math.cos(t * 1.3)
+    target_0 = 0.6 * math.sin(t)
+    target_1 = 0.4 * math.cos(t * 1.3)
 
-    position_control_joint(0, hedef_0)
-    position_control_joint(1, hedef_1)
+    position_control_joint(0, target_0)
+    position_control_joint(1, target_1)
 
     # Read the actual state
     joint_angle_0, joint_velocity_0 = read_joint_state(0)
