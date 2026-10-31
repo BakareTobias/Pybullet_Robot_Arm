@@ -54,19 +54,19 @@ print("="*60)
 print("SECTION 2: Linear Interpolation (The Simplest Method)")
 print("="*60)
 
-def linear_interpolation(start_time, bitis, t):
+def linear_interpolation(start_value, end_value, t):
     """
     Performs linear interpolation between two points.
 
     Parameters:
-        start_time: Starting value
-        bitis: Ending value
+        start_value: Starting value
+        end_value: Ending value
         t: Time (0.0 = start, 1.0 = end)
 
     Returns:
         Intermediate value
     """
-    return start_time + (bitis - start_time) * t
+    return start_value + (end_value - start_value) * t
 
 print("\nFormula: p(t) = p_start + (p_end - p_start) * t")
 print("  t = 0.0 → Start")
@@ -76,24 +76,24 @@ print("  t = 1.0 → End")
 # Example
 print("\nExample: Moving from 10 to 50")
 for t in [0.0, 0.25, 0.5, 0.75, 1.0]:
-    deger = linear_interpolation(10, 50, t)
-    print(f"  t={t:.2f} → {deger:.1f}")
+    point = linear_interpolation(10, 50, t)
+    print(f"  t={t:.2f} → {point:.1f}")
 
 input("Press ENTER to continue...\n")
 
 # Plot the graph
-t_dizi = np.linspace(0, 1, 100)
-position = [linear_interpolation(10, 50, t) for t in t_dizi]
-hiz = [50 - 10 for _ in t_dizi]  # Constant velocity (derivative)
+time_passed = np.linspace(0, 1, 100)
+position = [linear_interpolation(10, 50, t) for t in time_passed]
+hiz = [50 - 10 for _ in time_passed]  # Constant velocity (derivative)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
 
-ax1.plot(t_dizi, position, 'b-', linewidth=2)
+ax1.plot(time_passed, position, 'b-', linewidth=2)
 ax1.set_ylabel('Position', fontsize=12)
 ax1.set_title('Linear Interpolation', fontsize=14, fontweight='bold')
 ax1.grid(True, alpha=0.3)
 
-ax2.plot(t_dizi, hiz, 'r-', linewidth=2)
+ax2.plot(time_passed, hiz, 'r-', linewidth=2)
 ax2.set_xlabel('Time (t)', fontsize=12)
 ax2.set_ylabel('Velocity', fontsize=12)
 ax2.set_title('Velocity Profile (Constant)', fontsize=12)
@@ -115,7 +115,7 @@ print("="*60)
 print("SECTION 3: Cubic Interpolation (Better!)")
 print("="*60)
 
-def cubic_interpolation(start_time, bitis, t):
+def cubic_interpolation(start_value, end_value, t):
     """
     Cubic interpolation (smooth start and end).
 
@@ -123,7 +123,7 @@ def cubic_interpolation(start_time, bitis, t):
     """
     # Smooth transition function
     s = 3 * t**2 - 2 * t**3
-    return start_time + (bitis - start_time) * s
+    return start_value + (end_value - start_value) * s
 
 print("\nFormula: p(t) = p_start + (p_end - p_start) * (3t² - 2t³)")
 print("  This formula smooths the velocity:")
@@ -134,32 +134,32 @@ print("  - Slows down at the end\n")
 # Example
 print("Example: Moving from 10 to 50 (Cubic)")
 for t in [0.0, 0.25, 0.5, 0.75, 1.0]:
-    deger = cubic_interpolation(10, 50, t)
-    print(f"  t={t:.2f} → {deger:.1f}")
+    point = cubic_interpolation(10, 50, t)
+    print(f"  t={t:.2f} → {point:.1f}")
 
 input("Press ENTER to continue...\n")
 
 # Compare the plots
-t_dizi = np.linspace(0, 1, 100)
+time_passed = np.linspace(0, 1, 100)
 
-linear_pos = [linear_interpolation(10, 50, t) for t in t_dizi]
-cubic_pos = [cubic_interpolation(10, 50, t) for t in t_dizi]
+linear_pos = [linear_interpolation(10, 50, t) for t in time_passed]
+cubic_pos = [cubic_interpolation(10, 50, t) for t in time_passed]
 
 # Calculate velocity (derivative)
-linear_vel = np.gradient(linear_pos, t_dizi)
-cubic_vel = np.gradient(cubic_pos, t_dizi)
+linear_vel = np.gradient(linear_pos, time_passed)
+cubic_vel = np.gradient(cubic_pos, time_passed)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
 
-ax1.plot(t_dizi, linear_pos, 'b-', linewidth=2, label='Linear')
-ax1.plot(t_dizi, cubic_pos, 'r-', linewidth=2, label='Cubic')
+ax1.plot(time_passed, linear_pos, 'b-', linewidth=2, label='Linear')
+ax1.plot(time_passed, cubic_pos, 'r-', linewidth=2, label='Cubic')
 ax1.set_ylabel('Position', fontsize=12)
 ax1.set_title('Linear vs Cubic Interpolation', fontsize=14, fontweight='bold')
 ax1.legend()
 ax1.grid(True, alpha=0.3)
 
-ax2.plot(t_dizi, linear_vel, 'b-', linewidth=2, label='Linear Velocity')
-ax2.plot(t_dizi, cubic_vel, 'r-', linewidth=2, label='Cubic Velocity')
+ax2.plot(time_passed, linear_vel, 'b-', linewidth=2, label='Linear Velocity')
+ax2.plot(time_passed, cubic_vel, 'r-', linewidth=2, label='Cubic Velocity')
 ax2.set_xlabel('Time (t)', fontsize=12)
 ax2.set_ylabel('Velocity', fontsize=12)
 ax2.set_title('Velocity Profiles', fontsize=12)
@@ -215,21 +215,21 @@ def simulate(steps):
         p.stepSimulation()
         time.sleep(1./240.)
 
-def ik_hesapla(x, y, z):
+def calc_ik(x, y, z):
     """Calculate joint angles using IK."""
     return p.calculateInverseKinematics(robot, 6, [x, y, z])
 
 # Marker
 marker = None
-def marker_goster(x, y, z, color=[0, 1, 0, 0.8]):
+def show_target(x, y, z, color=[0, 1, 0, 0.8]):
     global marker
     if marker is not None:
         try:
             p.removeBody(marker)
         except:
             pass
-    gorsel = p.createVisualShape(p.GEOM_SPHERE, radius=0.05, rgbaColor=color)
-    marker = p.createMultiBody(0, baseVisualShapeIndex=gorsel, basePosition=[x, y, z])
+    sphere = p.createVisualShape(p.GEOM_SPHERE, radius=0.05, rgbaColor=color)
+    marker = p.createMultiBody(0, baseVisualShapeIndex=sphere, basePosition=[x, y, z])
 
 # =====================================================
 # TEST 1: Linear Trajectory
@@ -238,15 +238,15 @@ print("\n" + "="*60)
 print("TEST 1: Linear Trajectory")
 print("="*60)
 
-start_time_pos = np.array([0.3, 0.3, 0.5])
-bitis_pos = np.array([0.5, -0.2, 0.7])
+start_value_pos = np.array([0.3, 0.3, 0.5])
+end_value_pos = np.array([0.5, -0.2, 0.7])
 
-print(f"\nStart: {start_time_pos}")
-print(f"End  : {bitis_pos}")
+print(f"\nStart: {start_value_pos}")
+print(f"End  : {end_value_pos}")
 print("\n→ Robot will move LINEARLY (3 seconds)")
 
 # Move to the starting position
-eklem_targetlari = ik_hesapla(*start_time_pos)
+eklem_targetlari = calc_ik(*start_value_pos)
 for i in range(7):
     position_control_joint(i, eklem_targetlari[i])
 simulate(300)
@@ -259,11 +259,11 @@ for steps in range(no_steps):
     t = steps / no_steps  # 0.0 → 1.0
 
     # Linear interpolation
-    target = start_time_pos + (bitis_pos - start_time_pos) * t
+    target = start_value_pos + (end_value_pos - start_value_pos) * t
 
     # IK and movement
-    marker_goster(*target, color=[1, 0, 0, 0.8])
-    eklem_targetlari = ik_hesapla(*target)
+    show_target(*target, color=[1, 0, 0, 0.8])
+    eklem_targetlari = calc_ik(*target)
     for i in range(7):
         position_control_joint(i, eklem_targetlari[i])
 
@@ -282,12 +282,12 @@ print("TEST 2: Cubic Trajectory (Smoother)")
 print("="*60)
 
 # Same start and end points
-print(f"\nStart: {start_time_pos}")
-print(f"End  : {bitis_pos}")
+print(f"\nStart: {start_value_pos}")
+print(f"End  : {end_value_pos}")
 print("\n→ Robot will move using CUBIC interpolation (3 seconds)")
 
 # Return to the start
-eklem_targetlari = ik_hesapla(*start_time_pos)
+eklem_targetlari = calc_ik(*start_value_pos)
 for i in range(7):
     position_control_joint(i, eklem_targetlari[i])
 simulate(300)
@@ -299,11 +299,11 @@ for steps in range(no_steps):
 
     # Cubic interpolation
     s = 3 * t**2 - 2 * t**3  # Smooth transition
-    target = start_time_pos + (bitis_pos - start_time_pos) * s
+    target = start_value_pos + (end_value_pos - start_value_pos) * s
 
     # IK and movement
-    marker_goster(*target, color=[0, 1, 0, 0.8])
-    eklem_targetlari = ik_hesapla(*target)
+    show_target(*target, color=[0, 1, 0, 0.8])
+    eklem_targetlari = calc_ik(*target)
     for i in range(7):
         position_control_joint(i, eklem_targetlari[i])
 
@@ -337,16 +337,16 @@ for idx, wp in enumerate(waypoints, 1):
 
 # Show the points (persistent spheres)
 for wp in waypoints:
-    gorsel = p.createVisualShape(p.GEOM_SPHERE, radius=0.04, rgbaColor=[1, 1, 0, 0.7])
-    p.createMultiBody(0, baseVisualShapeIndex=gorsel, basePosition=wp.tolist())
+    sphere = p.createVisualShape(p.GEOM_SPHERE, radius=0.04, rgbaColor=[1, 1, 0, 0.7])
+    p.createMultiBody(0, baseVisualShapeIndex=sphere, basePosition=wp.tolist())
 
 print("\n→ The robot will pass through all points...")
 
 for idx in range(len(waypoints) - 1):
-    start_time = waypoints[idx]
-    bitis = waypoints[idx + 1]
+    start_value = waypoints[idx]
+    end_value = waypoints[idx + 1]
 
-    print(f"  Segment {idx+1}: {start_time} → {bitis}")
+    print(f"  Segment {idx+1}: {start_value} → {end_value}")
 
     segment_sure = 2.0
     segment_steps = int(segment_sure * 240)
@@ -354,10 +354,10 @@ for idx in range(len(waypoints) - 1):
     for steps in range(segment_steps):
         t = steps / segment_steps
         s = 3 * t**2 - 2 * t**3  # Cubic
-        target = start_time + (bitis - start_time) * s
+        target = start_value + (end_value - start_value) * s
 
-        marker_goster(*target, color=[0, 0, 1, 0.8])
-        eklem_targetlari = ik_hesapla(*target)
+        show_target(*target, color=[0, 0, 1, 0.8])
+        eklem_targetlari = calc_ik(*target)
         for i in range(7):
             position_control_joint(i, eklem_targetlari[i])
 

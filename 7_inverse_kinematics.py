@@ -89,8 +89,8 @@ def show_target(x, y, z, color=[1, 0, 0, 0.8]):
         except:
             pass
 
-    gorsel = p.createVisualShape(p.GEOM_SPHERE, radius=0.08, rgbaColor=color)
-    marker = p.createMultiBody(0, baseVisualShapeIndex=gorsel, basePosition=[x, y, z])
+    sphere = p.createVisualShape(p.GEOM_SPHERE, radius=0.08, rgbaColor=color)
+    marker = p.createMultiBody(0, baseVisualShapeIndex=sphere, basePosition=[x, y, z])
 
 # =====================================================
 # PyBullet IK Function

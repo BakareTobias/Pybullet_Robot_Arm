@@ -129,15 +129,15 @@ def ik_hesapla(x, y, z):
     return p.calculateInverseKinematics(robot, 6, [x, y, z])
 
 marker = None
-def marker_goster(x, y, z, color=[0, 1, 0, 0.8]):
+def show_target(x, y, z, color=[0, 1, 0, 0.8]):
     global marker
     if marker is not None:
         try:
             p.removeBody(marker)
         except:
             pass
-    gorsel = p.createVisualShape(p.GEOM_SPHERE, radius=0.05, rgbaColor=color)
-    marker = p.createMultiBody(0, baseVisualShapeIndex=gorsel, basePosition=[x, y, z])
+    sphere = p.createVisualShape(p.GEOM_SPHERE, radius=0.05, rgbaColor=color)
+    marker = p.createMultiBody(0, baseVisualShapeIndex=sphere, basePosition=[x, y, z])
 
 def carpisma_var_mi(guvenlik_errorsi=0.05):
     """
@@ -184,7 +184,7 @@ guvenli_targets = [
 for idx, target in enumerate(guvenli_targets, 1):
     print(f"\n  Target {idx}: {target}")
 
-    marker_goster(*target, color=[0, 1, 0, 0.8])
+    show_target(*target, color=[0, 1, 0, 0.8])
     eklem_targetlari = ik_hesapla(*target)
 
     for i in range(7):
@@ -214,7 +214,7 @@ tehlikeli_target = [0.4, 0.1, 0.3]  # Directly inside obstacle 1!
 print(f"\n⚠ Dangerous target: {tehlikeli_target}")
 print("  (This target is inside obstacle 1!)")
 
-marker_goster(*tehlikeli_target, color=[1, 0, 0, 0.8])
+show_target(*tehlikeli_target, color=[1, 0, 0, 0.8])
 
 print("\n→ The robot will move toward the dangerous target...")
 eklem_targetlari = ik_hesapla(*tehlikeli_target)
@@ -282,8 +282,8 @@ for idx, wp in enumerate(waypoints, 1):
 
 # Display the waypoints
 for wp in waypoints:
-    gorsel = p.createVisualShape(p.GEOM_SPHERE, radius=0.04, rgbaColor=[1, 1, 0, 0.9])
-    p.createMultiBody(0, baseVisualShapeIndex=gorsel, basePosition=wp.tolist())
+    sphere = p.createVisualShape(p.GEOM_SPHERE, radius=0.04, rgbaColor=[1, 1, 0, 0.9])
+    p.createMultiBody(0, baseVisualShapeIndex=sphere, basePosition=wp.tolist())
 
 print("\n→ The robot will move safely through the waypoints...")
 
@@ -302,7 +302,7 @@ for idx in range(len(waypoints) - 1):
 
         target_anlik = start_time_wp + (bitis_wp - start_time_wp) * s
 
-        marker_goster(*target_anlik, color=[0, 1, 1, 0.8])
+        show_target(*target_anlik, color=[0, 1, 1, 0.8])
         eklem_targetlari = ik_hesapla(*target_anlik)
 
         for i in range(7):
@@ -344,7 +344,7 @@ This is a simple demo; real applications are more complex:
 print("\n→ The robot will stop if it gets too close to an obstacle...")
 
 target_dinamik = [0.35, 0.0, 0.4]
-marker_goster(*target_dinamik, color=[1, 0.5, 0, 0.8])
+show_target(*target_dinamik, color=[1, 0.5, 0, 0.8])
 
 eklem_targetlari = ik_hesapla(*target_dinamik)
 

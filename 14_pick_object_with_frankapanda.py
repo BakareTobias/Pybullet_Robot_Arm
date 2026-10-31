@@ -191,8 +191,8 @@ def nesne_olustur(tip, position, color, boyut=0.04):
 # Debug marker (shows the target position)
 def show_target(pos, color=[0, 1, 0, 0.5]):
     """Show the target position with a sphere"""
-    gorsel = p.createVisualShape(p.GEOM_SPHERE, radius=0.03, rgbaColor=color)
-    marker = p.createMultiBody(0, baseVisualShapeIndex=gorsel, basePosition=pos)
+    sphere = p.createVisualShape(p.GEOM_SPHERE, radius=0.03, rgbaColor=color)
+    marker = p.createMultiBody(0, baseVisualShapeIndex=sphere, basePosition=pos)
     return marker
 
 # =====================================================
