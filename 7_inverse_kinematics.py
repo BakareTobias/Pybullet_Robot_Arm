@@ -110,12 +110,16 @@ def pybullet_ik(target_x, target_y, target_z):
     """
     # End-effector = Link 6
     end_effector_index = 6
+    max_iterations = 100
+    residual_threshold = 0.001
 
     # Calculate IK
     joint_angles = p.calculateInverseKinematics(
         bodyUniqueId=robot,
         endEffectorLinkIndex=end_effector_index,
-        targetPosition=[target_x, target_y, target_z]
+        targetPosition=[target_x, target_y, target_z],
+        maxNumIterations=max_iterations,
+        residualThreshold=residual_threshold
     )
 
     return joint_angles

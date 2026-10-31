@@ -12,6 +12,7 @@ import numpy as np
 # Start the simulation
 p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
+p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0) # Simplifies the display.
 p.setGravity(0, 0, -9.81)
 
 # Set the camera
@@ -62,7 +63,8 @@ def simulate(no_steps):
     """Run the simulation."""
     for i in range(no_steps):
         p.stepSimulation()
-        time.sleep(1./2400.)
+        time.sleep(1./240.)
+        print(f'\rstep {i}', end="")
 
 def visualize_target(x, y, z, color=[1, 0, 0, 0.7]):
     """Create a marker to visualize the target position."""
@@ -102,8 +104,8 @@ def inverse_kinematics(target_position, target_orientation=None):
     
     # IK solver parameters
     ik_solver = 0  # 0 = ikSolver, 1 = ikSolverPosOnly
-    max_iterations = 20
-    residual_threshold = 0.01
+    max_iterations = 100
+    residual_threshold = 0.001
     
     # Find movable joints
     movable_joints = []
@@ -165,13 +167,13 @@ print(f"\nCalculated joint angles:")
 for idx, joint_idx in enumerate(movable_joints[:7]):  # First 7 joints
     target = joint_targets[idx]
     info = p.getJointInfo(robot, joint_idx)
-    joint_velocity = info[1].decode('utf-8')
-    print(f"  Joint {joint_idx} ({joint_velocity}): {math.degrees(target):.2f}°")
+    joint_name = info[1].decode('utf-8')
+    print(f"  Joint {joint_idx} ({joint_name}): {math.degrees(target):.2f}°")
     position_control_joint(joint_idx, target)
 
 # Wait for the movement
 print("\nRobot moving to the target...")
-simulate(2000)
+simulate(500)
 
 # Check the results
 link_position = end_effector_position()
@@ -185,6 +187,9 @@ print(f"\n✓ Movement complete!")
 print(f"  Target position: ({target_x:.3f}, {target_y:.3f}, {target_z:.3f})")
 print(f"  Actual position: ({link_position[0]:.3f}, {link_position[1]:.3f}, {link_position[2]:.3f})")
 print(f"  Distance error: {error*1000:.2f} mm")
+for idx, joint_idx in enumerate(movable_joints[:7]):  # print final joint angles
+    joint_angle = read_joint_state(joint_idx)
+    print(f"  Joint {joint_idx} ({joint_name}): {math.degrees(joint_angle):.2f}°")
 
 input("\nPress ENTER to continue...")
 p.removeBody(marker)#remove task 1 marker
